@@ -1,0 +1,63 @@
+<?php
+
+namespace App\Models;
+
+use Database\Factories\PaymentFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use LogicException;
+use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
+use App\Support\DashboardCache;
+use Illuminate\Support\Facades\DB;
+
+#[Fillable(['amount', 'paid_at', 'reference'])]
+class Payment extends Model
+{
+    /** @use HasFactory<PaymentFactory> */
+    use HasFactory, BelongsToTenant;
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('require_tenant', function (Builder $builder): void {
+            if (! tenancy()->initialized) {
+                throw new LogicException('Payment queries require an active tenant.');
+            }
+        });
+
+        static::creating(function (Payment $payment): void {
+            if (! tenancy()->initialized) {
+                throw new LogicException('Creating a payment requires an active tenant.');
+            }
+
+            if ((string) $payment->tenant_id !== (string) tenant()->getTenantKey()) {
+                throw new LogicException('The payment must belong to the active tenant.');
+            }
+        });
+
+        static::updated(function (Payment $payment): void {
+            $tenantId = (string) $payment->tenant_id;
+
+            DB::afterCommit(
+                fn () => DashboardCache::invalidate($tenantId)
+            );
+        });
+    }
+
+    /** @return BelongsTo<Invoice, $this> */
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class);
+    }
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return [
+            'amount' => 'decimal:2',
+            'paid_at' => 'date',
+        ];
+    }
+}
