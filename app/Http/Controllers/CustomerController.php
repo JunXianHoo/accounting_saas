@@ -6,6 +6,8 @@ use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\Customer;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -14,16 +16,37 @@ class CustomerController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $validated = $request->validate([
+            'name' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', Rule::in(['AC', 'DA'])],
+        ]);
+        $filters = [
+            'name' => $validated['name'] ?? null,
+            'status' => $validated['status'] ?? null,
+        ];
+
+        $customers = Customer::query()
+            ->select(['id', 'name', 'email', 'phone', 'address', 'status']);
+
+        if ($filters['name'] !== null) {
+            $name = strtr($filters['name'], ['!' => '!!', '%' => '!%', '_' => '!_']);
+            $customers->whereRaw("LOWER(name) LIKE LOWER(?) ESCAPE '!'", ['%'.$name.'%']);
+        }
+
+        if ($filters['status'] !== null) {
+            $customers->where('status', $filters['status']);
+        }
+
         return Inertia::render('customers/Index', [
-            'customers' => Customer::query()
-                ->select(['id', 'name', 'email', 'phone', 'address', 'status'])
+            'filters' => $filters,
+            'customers' => $customers
                 ->orderBy('name')
                 ->orderBy('id')
-                ->paginate(15),
+                ->paginate(15)
+                ->appends($filters),
         ]);
-
     }
 
     /**

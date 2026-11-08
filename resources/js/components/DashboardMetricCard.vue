@@ -10,7 +10,7 @@ defineProps<{
 </script>
 
 <template>
-    <div class="rounded-lg border p-4">
+    <div class="rounded-lg border bg-card p-4 text-card-foreground">
         <dt class="text-sm text-muted-foreground">{{ label }}</dt>
         <dd class="mt-2 text-2xl font-semibold tabular-nums">
             <Link

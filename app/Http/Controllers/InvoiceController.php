@@ -19,19 +19,6 @@ use Inertia\Response;
 
 class InvoiceController extends Controller
 {
-    public function index(): Response
-    {
-        return Inertia::render('invoices/Index', [
-            'invoices' => Invoice::query()
-                ->with('customer:id,name')
-                ->withPaymentTotals()
-                ->orderByDesc('issue_date')
-                ->orderByDesc('id')
-                ->paginate(15)
-                ->through(fn (Invoice $invoice) => $invoice->appendBalance()),
-        ]);
-    }
-
     public function store(
         StoreInvoiceRequest $request,
         CreateInvoice $createInvoice,
@@ -43,7 +30,7 @@ class InvoiceController extends Controller
             $invoice->id,
         )->afterCommit();
 
-        return to_route('invoices.index');
+        return to_route('reports.sales');
     }
 
     public function create(): Response
@@ -137,6 +124,6 @@ class InvoiceController extends Controller
     ): RedirectResponse {
         $deleteInvoice->handle($invoice);
 
-        return to_route('invoices.index');
+        return to_route('reports.sales');
     }
 }

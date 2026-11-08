@@ -40,7 +40,7 @@ defineProps<{
                     type="email"
                     name="email"
                     autocomplete="off"
-                    v-focus
+                    autofocus
                     placeholder="email@example.com"
                 />
                 <InputError :message="errors.email" />
@@ -48,6 +48,7 @@ defineProps<{
 
             <div class="my-6 flex items-center justify-start">
                 <Button
+                    type="submit"
                     class="w-full"
                     :disabled="processing"
                     data-test="email-password-reset-link-button"

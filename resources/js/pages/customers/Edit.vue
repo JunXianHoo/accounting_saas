@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
+import UTextarea from '@nuxt/ui/components/Textarea.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,13 +82,13 @@ function submit() {
 
             <div class="grid gap-2">
                 <Label for="address">Address (optional)</Label>
-                <textarea
+                <UTextarea
                     id="address"
                     v-model="form.address"
                     autocomplete="street-address"
                     maxlength="255"
-                    rows="3"
-                    class="w-full rounded-md border bg-background p-3"
+                    :rows="3"
+                    class="w-full"
                 />
                 <InputError :message="form.errors.address" />
             </div>
@@ -97,7 +98,7 @@ function submit() {
                     {{ form.processing ? 'Saving…' : 'Save customer' }}
                 </Button>
 
-                <Link href="/customers" class="underline"> Cancel </Link>
+                <Button to="/customers" variant="ghost">Cancel</Button>
             </div>
         </form>
     </div>

@@ -1,6 +1,6 @@
 import inertia from '@inertiajs/vite';
 import { wayfinder } from '@laravel/vite-plugin-wayfinder';
-import tailwindcss from '@tailwindcss/vite';
+import ui from '@nuxt/ui/vite';
 import vue from '@vitejs/plugin-vue';
 import laravel from 'laravel-vite-plugin';
 import { bunny } from 'laravel-vite-plugin/fonts';
@@ -18,12 +18,31 @@ export default defineConfig({
             ],
         }),
         inertia(),
-        tailwindcss(),
         vue({
             template: {
                 transformAssetUrls: {
                     base: null,
                     includeAbsolute: false,
+                },
+            },
+        }),
+        ui({
+            router: 'inertia',
+            colorMode: false,
+            dts: false,
+            ui: {
+                colors: {
+                    primary: 'indigo',
+                    neutral: 'slate',
+                },
+                table: {
+                    slots: {
+                        root: 'rounded-xl border border-default bg-card',
+                        thead: 'bg-muted',
+                        tfoot: 'bg-muted',
+                        tr: 'hover:bg-elevated/40',
+                        td: 'text-default',
+                    },
                 },
             },
         }),

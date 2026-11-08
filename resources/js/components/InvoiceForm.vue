@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { Link, useForm } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { getLocalTimeZone, today } from '@internationalized/date';
+import USelect from '@nuxt/ui/components/Select.vue';
+import { computed, useId } from 'vue';
 import InvoiceDatePicker from '@/components/DatePicker.vue';
 
 interface InvoiceItem {
@@ -26,7 +30,7 @@ const props = withDefaults(
     }>(),
     {
         method: 'post',
-        cancelHref: '/invoices',
+        cancelHref: '/reports/sales',
     },
 );
 
@@ -45,6 +49,14 @@ const form = useForm({
         : [newItem()],
 });
 
+const customerId = useId();
+const customerOptions = computed(() =>
+    props.customers.map((customer) => ({
+        label: customer.name,
+        value: String(customer.id),
+    })),
+);
+
 function submit() {
     form.submit(props.method, props.action);
 }
@@ -61,29 +73,32 @@ function submit() {
                 {{ $page.props.errors.invoice }}
             </p>
 
-            <label class="block">
-                Customer
-                <select
-                    v-model="form.customer_id"
+            <div>
+                <label :for="customerId" class="block">Customer</label>
+                <USelect
+                    :id="customerId"
+                    :model-value="form.customer_id || undefined"
+                    :items="customerOptions"
+                    name="customer_id"
+                    placeholder="Select a customer"
                     required
-                    class="mt-1 block w-full rounded border p-2"
-                >
-                    <option disabled value="">Select a customer</option>
-                    <option
-                        v-for="customer in customers"
-                        :key="customer.id"
-                        :value="String(customer.id)"
-                    >
-                        {{ customer.name }}
-                    </option>
-                </select>
+                    :aria-invalid="Boolean(form.errors.customer_id)"
+                    :aria-describedby="
+                        form.errors.customer_id
+                            ? `${customerId}-error`
+                            : undefined
+                    "
+                    class="mt-1 w-full"
+                    @update:model-value="form.customer_id = $event"
+                />
                 <span
                     v-if="form.errors.customer_id"
+                    :id="`${customerId}-error`"
                     class="text-sm text-red-600"
                 >
                     {{ form.errors.customer_id }}
                 </span>
-            </label>
+            </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <InvoiceDatePicker
@@ -111,32 +126,32 @@ function submit() {
 
                 <label class="block">
                     Description
-                    <input
+                    <Input
                         v-model="item.description"
                         required
                         maxlength="2000"
-                        class="mt-1 block w-full rounded border p-2"
+                        class="mt-1"
                     />
                 </label>
 
                 <div class="grid gap-4 sm:grid-cols-2">
                     <label>
                         Quantity
-                        <input
+                        <Input
                             v-model="item.quantity"
                             inputmode="decimal"
                             required
-                            class="mt-1 block w-full rounded border p-2"
+                            class="mt-1"
                         />
                     </label>
 
                     <label>
                         Unit price
-                        <input
+                        <Input
                             v-model="item.unit_price"
                             inputmode="decimal"
                             required
-                            class="mt-1 block w-full rounded border p-2"
+                            class="mt-1"
                         />
                     </label>
                 </div>
@@ -153,34 +168,33 @@ function submit() {
                     {{ form.errors[`items.${index}.${field}`] }}
                 </p>
 
-                <button
+                <Button
                     v-if="form.items.length > 1"
                     type="button"
                     class="text-sm underline"
                     @click="form.items.splice(index, 1)"
                 >
                     Remove item
-                </button>
+                </Button>
             </fieldset>
 
-            <button
+            <Button
                 type="button"
-                class="rounded border px-3 py-2"
+                variant="outline"
                 :disabled="form.items.length >= 100"
                 @click="form.items.push(newItem())"
             >
                 Add item
-            </button>
+            </Button>
 
             <div class="flex items-center gap-4">
-                <button
+                <Button
                     type="submit"
-                    class="rounded bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
                     :disabled="form.processing || customers.length === 0"
                 >
                     {{ form.processing ? 'Saving…' : 'Save invoice' }}
-                </button>
-                <Link :href="cancelHref">Cancel</Link>
+                </Button>
+                <Button :to="cancelHref" variant="ghost">Cancel</Button>
             </div>
         </form>
     </div>

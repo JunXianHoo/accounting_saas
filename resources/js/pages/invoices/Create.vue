@@ -9,7 +9,7 @@ defineProps<{
 defineOptions({
     layout: {
         breadcrumbs: [
-            { title: 'Invoices', href: '/invoices' },
+            { title: 'Invoice reports', href: '/reports/sales' },
             { title: 'New invoice', href: '/invoices/create' },
         ],
     },

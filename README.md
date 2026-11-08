@@ -49,7 +49,7 @@ A shared-database, multi-company accounting application built with Laravel, Iner
 ## Try the application
 
 - Visit `/customers` to create an active customer.
-- Visit `/invoices` to issue an invoice for that customer. Its number uses the issue date and a daily sequence for the company, such as `INV20261107001`.
+- Open **Invoice Reports** at `/reports/sales` and click **Create invoice** to issue an invoice for that customer. Its number uses the issue date and a daily sequence for the company, such as `INV20261107001`.
 - Open the invoice to edit or delete it before recording payments. Invoice edits preserve the assigned number. Record a partial payment with an optional reference, then pay the remaining balance.
 - Visit `/dashboard` to see company totals. Monthly receipts use payment dates. Visit `/reports/sales` to filter by invoice number, payment status, customer, or issue-date range.
 - Register a second account to create a separate company and verify that its invoice list and report start empty.

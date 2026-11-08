@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/vue3';
 import InvoiceReportFilters from '@/components/InvoiceReportFilters.vue';
 import InvoiceTable from '@/components/InvoiceTable.vue';
 import PaginationLinks from '@/components/PaginationLinks.vue';
+import { Button } from '@/components/ui/button';
 import type {
     InvoiceReportFilters as Filters,
     PaginatedInvoices,
@@ -23,7 +24,10 @@ defineProps<{
     <Head title="Invoice reports" />
 
     <div class="space-y-4 p-4">
-        <h1 class="text-2xl font-semibold">Invoice reports</h1>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <h1 class="text-2xl font-semibold">Invoice reports</h1>
+            <Button to="/invoices/create">Create invoice</Button>
+        </div>
 
         <p v-if="filters.balance" class="text-sm text-muted-foreground">
             {{

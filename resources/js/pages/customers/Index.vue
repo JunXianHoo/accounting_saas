@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import UBadge from '@nuxt/ui/components/Badge.vue';
+import USelect from '@nuxt/ui/components/Select.vue';
+import UTable from '@nuxt/ui/components/Table.vue';
+import type { TableColumn } from '@nuxt/ui/components/Table.vue';
+import { computed, useId, watch } from 'vue';
 
 interface Customer {
     id: number;
@@ -19,8 +26,12 @@ interface CustomerPagination {
     next_page_url: string | null;
 }
 
-defineProps<{
+const props = defineProps<{
     customers: CustomerPagination;
+    filters: {
+        name: string | null;
+        status: Customer['status'] | null;
+    };
 }>();
 
 defineOptions({
@@ -29,7 +40,58 @@ defineOptions({
     },
 });
 
+const columns: TableColumn<Customer>[] = [
+    {
+        accessorKey: 'name',
+        header: 'Name',
+        meta: { class: { td: 'font-medium text-highlighted' } },
+    },
+    { accessorKey: 'email', header: 'Email' },
+    {
+        accessorFn: (customer) => customer.phone ?? '—',
+        id: 'phone',
+        header: 'Phone',
+    },
+    {
+        accessorFn: (customer) => customer.address ?? '—',
+        id: 'address',
+        header: 'Address',
+        meta: { class: { td: 'min-w-40 whitespace-normal' } },
+    },
+    { accessorKey: 'status', header: 'Status' },
+    { id: 'actions', header: 'Actions' },
+];
+
 const statusForm = useForm({});
+const filterForm = useForm<{ name: string; status: Customer['status'] | '' }>({
+    name: props.filters.name ?? '',
+    status: props.filters.status ?? '',
+});
+
+const statusId = useId();
+const statusOptions = [
+    { label: 'All statuses', value: 'all' },
+    { label: 'Active', value: 'AC' },
+    { label: 'Deactivated', value: 'DA' },
+] satisfies { label: string; value: 'all' | Customer['status'] }[];
+const statusSelection = computed({
+    get: () => filterForm.status || 'all',
+    set: (value) => {
+        filterForm.status = value === 'all' ? '' : value;
+    },
+});
+
+watch(
+    () => props.filters,
+    (filters) => {
+        filterForm.name = filters.name ?? '';
+        filterForm.status = filters.status ?? '';
+    },
+);
+
+function applyFilters() {
+    filterForm.get('/customers', { preserveScroll: true });
+}
 
 function deactivateCustomer(customer: Customer) {
     if (!window.confirm(`Deactivate customer "${customer.name}"?`)) {
@@ -59,81 +121,117 @@ function reactivateCustomer(customer: Customer) {
         <div class="flex items-center justify-between gap-4">
             <h1 class="text-2xl font-semibold">Customers</h1>
 
-            <Link
-                href="/customers/create"
-                class="rounded-md bg-primary px-4 py-2 text-primary-foreground"
-            >
-                Add customer
-            </Link>
+            <Button to="/customers/create">Add customer</Button>
         </div>
 
-        <p v-if="customers.total === 0" class="text-muted-foreground">
-            No customers yet.
-        </p>
+        <form
+            class="flex flex-wrap items-start gap-4"
+            @submit.prevent="applyFilters"
+        >
+            <label class="block w-full sm:max-w-xs">
+                Customer name
+                <Input
+                    v-model="filterForm.name"
+                    type="search"
+                    maxlength="255"
+                    placeholder="Search by name"
+                    class="mt-1"
+                />
+                <span
+                    v-if="filterForm.errors.name"
+                    class="text-sm text-red-600"
+                >
+                    {{ filterForm.errors.name }}
+                </span>
+            </label>
 
-        <div v-else class="overflow-x-auto">
-            <table class="w-full text-left">
-                <thead>
-                    <tr class="border-b">
-                        <th class="p-3">Name</th>
-                        <th class="p-3">Email</th>
-                        <th class="p-3">Phone</th>
-                        <th class="p-3">Address</th>
-                        <th class="p-3">Status</th>
-                        <th class="p-3">Action</th>
-                    </tr>
-                </thead>
+            <div class="w-full sm:w-40">
+                <label :for="statusId" class="block">Status</label>
+                <USelect
+                    :id="statusId"
+                    v-model="statusSelection"
+                    :items="statusOptions"
+                    :aria-invalid="Boolean(filterForm.errors.status)"
+                    :aria-describedby="
+                        filterForm.errors.status
+                            ? `${statusId}-error`
+                            : undefined
+                    "
+                    class="mt-1 w-full"
+                />
+                <span
+                    v-if="filterForm.errors.status"
+                    :id="`${statusId}-error`"
+                    class="text-sm text-red-600"
+                >
+                    {{ filterForm.errors.status }}
+                </span>
+            </div>
 
-                <tbody>
-                    <tr
-                        v-for="customer in customers.data"
-                        :key="customer.id"
-                        class="border-b"
+            <div class="flex items-center gap-2 pt-7">
+                <Button type="submit" :disabled="filterForm.processing">
+                    Apply
+                </Button>
+                <Button to="/customers" variant="outline">Reset</Button>
+            </div>
+        </form>
+
+        <UTable
+            :data="customers.data"
+            :columns="columns"
+            :empty="
+                filters.name || filters.status
+                    ? 'No customers match your filters.'
+                    : 'No customers yet.'
+            "
+            caption="Customers"
+        >
+            <template #status-cell="{ row }">
+                <UBadge
+                    :color="
+                        row.original.status === 'AC' ? 'success' : 'neutral'
+                    "
+                    variant="subtle"
+                >
+                    {{
+                        row.original.status === 'AC' ? 'Active' : 'Deactivated'
+                    }}
+                </UBadge>
+            </template>
+            <template #actions-cell="{ row }">
+                <div class="flex items-center gap-2">
+                    <Button
+                        :to="`/customers/${row.original.id}/edit`"
+                        variant="ghost"
+                        size="sm"
                     >
-                        <td class="p-3">{{ customer.name }}</td>
-                        <td class="p-3">{{ customer.email }}</td>
-                        <td class="p-3">{{ customer.phone ?? '—' }}</td>
-                        <td class="p-3">{{ customer.address ?? '—' }}</td>
-                        <td class="p-3">
-                            {{
-                                customer.status === 'AC'
-                                    ? 'Active'
-                                    : 'Deactivated'
-                            }}
-                        </td>
-                        <td class="p-3">
-                            <div class="flex items-center gap-4">
-                                <Link
-                                    :href="`/customers/${customer.id}/edit`"
-                                    class="underline"
-                                >
-                                    Edit
-                                </Link>
-
-                                <button
-                                    v-if="customer.status === 'AC'"
-                                    type="button"
-                                    class="text-red-600 underline disabled:opacity-50"
-                                    :disabled="statusForm.processing"
-                                    @click="deactivateCustomer(customer)"
-                                >
-                                    Deactivate
-                                </button>
-                                <button
-                                    v-else
-                                    type="button"
-                                    class="text-green-600 underline disabled:opacity-50"
-                                    :disabled="statusForm.processing"
-                                    @click="reactivateCustomer(customer)"
-                                >
-                                    Reactivate
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                        Edit
+                    </Button>
+                    <Button
+                        v-if="row.original.status === 'AC'"
+                        type="button"
+                        variant="ghost"
+                        color="error"
+                        size="sm"
+                        :disabled="statusForm.processing"
+                        @click="deactivateCustomer(row.original)"
+                    >
+                        Deactivate
+                    </Button>
+                    <Button
+                        v-else
+                        type="button"
+                        variant="ghost"
+                        color="success"
+                        size="sm"
+                        :disabled="statusForm.processing"
+                        @click="reactivateCustomer(row.original)"
+                    >
+                        Reactivate
+                    </Button>
+                </div>
+            </template>
+        </UTable>
 
         <nav
             v-if="customers.total > 0"

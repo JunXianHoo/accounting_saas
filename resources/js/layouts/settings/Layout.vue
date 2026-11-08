@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -49,12 +48,10 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
                             'w-full justify-start',
                             { 'bg-muted': isCurrentOrParentUrl(item.href) },
                         ]"
-                        as-child
+                        :to="toUrl(item.href)"
                     >
-                        <Link :href="item.href">
-                            <component :is="item.icon" class="h-4 w-4" />
-                            {{ item.title }}
-                        </Link>
+                        <component :is="item.icon" class="h-4 w-4" />
+                        {{ item.title }}
                     </Button>
                 </nav>
             </aside>

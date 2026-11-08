@@ -13,6 +13,12 @@ beforeEach(function () {
     ]);
 });
 
+test('the former invoice list redirects to invoice reports', function () {
+    $this->actingAs($this->user)
+        ->get(route('invoices.index'))
+        ->assertRedirect(route('reports.sales'));
+});
+
 test('sales includes only company invoices issued in the selected range', function () {
     $from = today()->subDays(7)->toDateString();
     $to = today()->toDateString();
