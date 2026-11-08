@@ -69,3 +69,44 @@ test('users only receive their own company customers', function () {
 
     expect(tenancy()->initialized)->toBeFalse();
 });
+
+test('customer name and status filters combine and persist through pagination', function () {
+    $company = Tenant::create(['name' => 'Company A']);
+    $otherCompany = Tenant::create(['name' => 'Company B']);
+    $user = User::factory()->create(['tenant_id' => $company->id]);
+
+    $lastMatch = $company->run(function () {
+        $matches = Customer::factory()->count(16)->create([
+            'name' => 'Acme_Trading',
+            'status' => 'DA',
+        ]);
+        Customer::factory()->create(['name' => 'Acme_Trading', 'status' => 'AC']);
+        Customer::factory()->create(['name' => 'AcmeXTrading', 'status' => 'DA']);
+
+        return $matches->last();
+    });
+    $otherCompany->run(fn () => Customer::factory()->create([
+        'name' => 'Acme_Trading',
+        'status' => 'DA',
+    ]));
+
+    $filters = ['name' => 'acme_', 'status' => 'DA'];
+    $nextPage = route('customers.index', [...$filters, 'page' => 2]);
+
+    $this->actingAs($user)
+        ->get(route('customers.index', $filters))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters', $filters)
+            ->has('customers.data', 15)
+            ->where('customers.total', 16)
+            ->where('customers.next_page_url', $nextPage)
+        );
+
+    $this->get($nextPage)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('customers.data', 1)
+            ->where('customers.data.0.id', $lastMatch->id)
+        );
+});

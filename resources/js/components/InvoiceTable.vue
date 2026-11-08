@@ -1,95 +1,77 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
+import UBadge from '@nuxt/ui/components/Badge.vue';
+import UTable from '@nuxt/ui/components/Table.vue';
+import type { TableColumn } from '@nuxt/ui/components/Table.vue';
 import DateDisplay from './DateDisplay.vue';
 import type { InvoiceSummary } from '@/types/invoice';
 
-withDefaults(
-    defineProps<{
-        invoices: InvoiceSummary[];
-        emptyMessage: string;
-        showPaymentTotals?: boolean;
-    }>(),
+defineProps<{
+    invoices: InvoiceSummary[];
+    emptyMessage: string;
+}>();
+
+const amount = { class: { th: 'text-end', td: 'text-end tabular-nums' } };
+const columns: TableColumn<InvoiceSummary>[] = [
+    { accessorKey: 'invoice_number', header: 'Invoice no.' },
     {
-        showPaymentTotals: true,
+        accessorFn: (invoice) => invoice.customer?.name ?? '—',
+        id: 'customer',
+        header: 'Customer',
     },
-);
+    { accessorKey: 'issue_date', header: 'Issue date' },
+    { accessorKey: 'due_date', header: 'Due date' },
+    { accessorKey: 'status', header: 'Status' },
+    { accessorKey: 'total', header: 'Total', meta: amount },
+    { accessorKey: 'total_paid', header: 'Paid to date', meta: amount },
+    { accessorKey: 'outstanding_balance', header: 'Outstanding', meta: amount },
+];
+
+const statusColors = {
+    unpaid: 'neutral',
+    partial: 'warning',
+    paid: 'success',
+} as const;
 </script>
 
 <template>
-    <div v-if="invoices.length > 0" class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-            <thead class="border-b">
-                <tr>
-                    <th scope="col" class="p-2">Invoice no.</th>
-                    <th scope="col" class="p-2">Customer</th>
-                    <th scope="col" class="p-2">Issue date</th>
-                    <th scope="col" class="p-2">Due date</th>
-                    <th scope="col" class="p-2">Status</th>
-                    <th scope="col" class="p-2 text-right">Total</th>
-                    <th
-                        v-if="showPaymentTotals"
-                        scope="col"
-                        class="p-2 text-right"
-                    >
-                        Paid to date
-                    </th>
-                    <th
-                        v-if="showPaymentTotals"
-                        scope="col"
-                        class="p-2 text-right"
-                    >
-                        Outstanding
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr
-                    v-for="invoice in invoices"
-                    :key="invoice.id"
-                    class="border-b"
+    <UTable
+        :data="invoices"
+        :columns="columns"
+        :empty="emptyMessage"
+        caption="Invoices"
+    >
+        <template #invoice_number-cell="{ row }">
+            <Link
+                :href="`/invoices/${row.original.id}`"
+                class="font-medium text-primary hover:underline"
+            >
+                {{ row.original.invoice_number }}
+            </Link>
+        </template>
+        <template #issue_date-cell="{ row }">
+            <DateDisplay :value="row.original.issue_date" />
+        </template>
+        <template #due_date-cell="{ row }">
+            <DateDisplay :value="row.original.due_date" />
+        </template>
+        <template #status-cell="{ row }">
+            <div class="flex items-center gap-2">
+                <UBadge
+                    :color="statusColors[row.original.status]"
+                    variant="subtle"
+                    class="capitalize"
                 >
-                    <td class="p-2">
-                        <Link
-                            :href="`/invoices/${invoice.id}`"
-                            class="underline"
-                        >
-                            {{ invoice.invoice_number }}
-                        </Link>
-                    </td>
-                    <td class="p-2">{{ invoice.customer?.name ?? '—' }}</td>
-                    <td class="p-2">
-                        <DateDisplay :value="invoice.issue_date" />
-                    </td>
-                    <td class="p-2">
-                        <DateDisplay :value="invoice.due_date" />
-                    </td>
-                    <td class="p-2">
-                        <span class="capitalize">{{ invoice.status }}</span>
-                        <span
-                            v-if="invoice.overdue"
-                            class="ml-2 rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800"
-                        >
-                            Overdue
-                        </span>
-                    </td>
-                    <td class="p-2 text-right tabular-nums">
-                        {{ invoice.total }}
-                    </td>
-                    <td
-                        v-if="showPaymentTotals"
-                        class="p-2 text-right tabular-nums"
-                    >
-                        {{ invoice.total_paid }}
-                    </td>
-                    <td
-                        v-if="showPaymentTotals"
-                        class="p-2 text-right tabular-nums"
-                    >
-                        {{ invoice.outstanding_balance }}
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-    <p v-else class="text-muted-foreground">{{ emptyMessage }}</p>
+                    {{ row.original.status }}
+                </UBadge>
+                <UBadge
+                    v-if="row.original.overdue"
+                    color="error"
+                    variant="subtle"
+                >
+                    Overdue
+                </UBadge>
+            </div>
+        </template>
+    </UTable>
 </template>

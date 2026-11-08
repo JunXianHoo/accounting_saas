@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import UTable from '@nuxt/ui/components/Table.vue';
+import type { TableColumn } from '@nuxt/ui/components/Table.vue';
 import DateDisplay from '@/components/DateDisplay.vue';
 import InvoiceDatePicker from '@/components/DatePicker.vue';
 import {
@@ -44,6 +48,35 @@ const props = defineProps<{
     latestPaymentDate: string;
 }>();
 
+const amount = { class: { th: 'text-end', td: 'text-end tabular-nums' } };
+const itemColumns: TableColumn<InvoiceItem>[] = [
+    {
+        accessorKey: 'description',
+        header: 'Description',
+        footer: 'Invoice total',
+        meta: { class: { td: 'min-w-48 whitespace-normal' } },
+    },
+    { accessorKey: 'quantity', header: 'Quantity', meta: amount },
+    { accessorKey: 'unit_price', header: 'Unit price', meta: amount },
+    {
+        accessorKey: 'line_total',
+        header: 'Total',
+        footer: () => props.invoice.total,
+        meta: amount,
+    },
+];
+
+const paymentColumns: TableColumn<(typeof props.invoice.payments)[number]>[] = [
+    { accessorKey: 'paid_at', header: 'Payment date' },
+    {
+        accessorFn: (payment) => payment.reference ?? '—',
+        id: 'reference',
+        header: 'Payment reference',
+        meta: { class: { td: 'min-w-40 whitespace-normal break-words' } },
+    },
+    { accessorKey: 'amount', header: 'Amount', meta: amount },
+];
+
 const paymentForm = useForm({
     amount: '',
     paid_at: props.latestPaymentDate,
@@ -70,26 +103,25 @@ function deleteInvoice() {
     <Head :title="`Invoice ${invoice.invoice_number}`" />
 
     <div class="space-y-4 p-4">
-        <Link href="/invoices" class="underline">Back to invoices</Link>
+        <Link href="/reports/sales" class="underline">
+            Back to invoice reports
+        </Link>
 
         <h1 class="text-2xl font-semibold">
             Invoice {{ invoice.invoice_number }}
         </h1>
-        <Link
+        <Button
             v-if="invoice.payments.length === 0"
-            :href="`/invoices/${invoice.id}/edit`"
-            class="inline-block cursor-pointer rounded border px-4 py-2 hover:bg-accent"
+            :to="`/invoices/${invoice.id}/edit`"
+            variant="outline"
         >
             Edit invoice
-        </Link>
+        </Button>
         <Dialog v-if="invoice.payments.length === 0">
             <DialogTrigger as-child>
-                <button
-                    type="button"
-                    class="cursor-pointer rounded border border-destructive px-4 py-2 text-destructive"
-                >
+                <Button type="button" variant="outline" color="error">
                     Delete invoice
-                </button>
+                </Button>
             </DialogTrigger>
 
             <DialogContent>
@@ -112,18 +144,18 @@ function deleteInvoice() {
 
                     <DialogFooter>
                         <DialogClose as-child>
-                            <button
+                            <Button
                                 type="button"
-                                class="cursor-pointer rounded border px-4 py-2 disabled:cursor-not-allowed"
+                                variant="outline"
                                 :disabled="deleteForm.processing"
                             >
                                 Cancel
-                            </button>
+                            </Button>
                         </DialogClose>
 
-                        <button
+                        <Button
                             type="submit"
-                            class="cursor-pointer rounded bg-destructive px-4 py-2 text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                            variant="destructive"
                             :disabled="deleteForm.processing"
                         >
                             {{
@@ -131,7 +163,7 @@ function deleteInvoice() {
                                     ? 'Deleting…'
                                     : 'Delete invoice'
                             }}
-                        </button>
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
@@ -149,40 +181,11 @@ function deleteInvoice() {
             </span>
         </p>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-                <thead class="border-b">
-                    <tr>
-                        <th scope="col" class="p-2">Description</th>
-                        <th scope="col" class="p-2 text-right">Quantity</th>
-                        <th scope="col" class="p-2 text-right">Unit price</th>
-                        <th scope="col" class="p-2 text-right">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr
-                        v-for="item in invoice.items"
-                        :key="item.id"
-                        class="border-b"
-                    >
-                        <td class="p-2">{{ item.description }}</td>
-                        <td class="p-2 text-right">{{ item.quantity }}</td>
-                        <td class="p-2 text-right">{{ item.unit_price }}</td>
-                        <td class="p-2 text-right">{{ item.line_total }}</td>
-                    </tr>
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <th scope="row" colspan="3" class="p-2 text-right">
-                            Invoice total
-                        </th>
-                        <td class="p-2 text-right font-semibold">
-                            {{ invoice.total }}
-                        </td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
+        <UTable
+            :data="invoice.items"
+            :columns="itemColumns"
+            caption="Invoice items"
+        />
     </div>
 
     <section class="space-y-2 rounded border p-4">
@@ -190,34 +193,16 @@ function deleteInvoice() {
         <p>Total paid: {{ totalPaid }}</p>
         <p>Outstanding balance: {{ outstandingBalance }}</p>
 
-        <p v-if="invoice.payments.length === 0" class="text-muted-foreground">
-            No payments recorded yet.
-        </p>
-
-        <div v-else class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-                <thead class="border-b">
-                    <tr>
-                        <th scope="col" class="p-2">Payment date</th>
-                        <th scope="col" class="p-2">Payment reference</th>
-                        <th scope="col" class="p-2 text-right">Amount</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y">
-                    <tr v-for="payment in invoice.payments" :key="payment.id">
-                        <td class="p-2">
-                            <DateDisplay :value="payment.paid_at" />
-                        </td>
-                        <td class="p-2 break-words">
-                            {{ payment.reference ?? '—' }}
-                        </td>
-                        <td class="p-2 text-right tabular-nums">
-                            {{ payment.amount }}
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        <UTable
+            :data="invoice.payments"
+            :columns="paymentColumns"
+            empty="No payments recorded yet."
+            caption="Payment history"
+        >
+            <template #paid_at-cell="{ row }">
+                <DateDisplay :value="row.original.paid_at" />
+            </template>
+        </UTable>
     </section>
 
     <form
@@ -232,12 +217,12 @@ function deleteInvoice() {
 
         <label class="block">
             Amount
-            <input
+            <Input
                 v-model="paymentForm.amount"
                 type="text"
                 inputmode="decimal"
                 required
-                class="mt-1 block w-full rounded border p-2"
+                class="mt-1"
             />
             <span v-if="paymentForm.errors.amount" class="text-sm text-red-600">
                 {{ paymentForm.errors.amount }}
@@ -254,12 +239,12 @@ function deleteInvoice() {
 
         <label class="block">
             Payment reference (optional)
-            <input
+            <Input
                 v-model="paymentForm.reference"
                 type="text"
                 maxlength="255"
                 placeholder="Bank transaction, cheque, or receipt number"
-                class="mt-1 block w-full rounded border p-2"
+                class="mt-1"
             />
             <span
                 v-if="paymentForm.errors.reference"
@@ -269,12 +254,8 @@ function deleteInvoice() {
             </span>
         </label>
 
-        <button
-            type="submit"
-            class="rounded bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
-            :disabled="paymentForm.processing"
-        >
+        <Button type="submit" :disabled="paymentForm.processing">
             {{ paymentForm.processing ? 'Saving…' : 'Record payment' }}
-        </button>
+        </Button>
     </form>
 </template>

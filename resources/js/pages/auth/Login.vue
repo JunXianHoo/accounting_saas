@@ -52,7 +52,7 @@ defineProps<{
                     type="email"
                     name="email"
                     required
-                    v-focus
+                    autofocus
                     :tabindex="1"
                     autocomplete="email"
                     placeholder="email@example.com"

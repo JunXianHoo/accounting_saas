@@ -211,22 +211,18 @@ const rightNavItems: NavItem[] = [
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                as-child
+                                                :href="toUrl(item.href)"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
                                                 class="group h-9 w-9 cursor-pointer"
                                             >
-                                                <a
-                                                    :href="toUrl(item.href)"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                >
-                                                    <span class="sr-only">{{
-                                                        item.title
-                                                    }}</span>
-                                                    <component
-                                                        :is="item.icon"
-                                                        class="size-5 opacity-80 group-hover:opacity-100"
-                                                    />
-                                                </a>
+                                                <span class="sr-only">{{
+                                                    item.title
+                                                }}</span>
+                                                <component
+                                                    :is="item.icon"
+                                                    class="size-5 opacity-80 group-hover:opacity-100"
+                                                />
                                             </Button>
                                         </TooltipTrigger>
                                         <TooltipContent>

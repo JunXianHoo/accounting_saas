@@ -49,7 +49,7 @@ defineOptions({
     <div class="space-y-4 p-4">
         <div class="flex items-center justify-between gap-4">
             <h1 class="text-2xl font-semibold">Invoice overview</h1>
-            <Link href="/invoices" class="underline">View invoices</Link>
+            <Link href="/reports/sales" class="underline">View invoices</Link>
         </div>
 
         <dl class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">

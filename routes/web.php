@@ -38,7 +38,7 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     ])->name('customers.deactivate');
 
     // Invoice routes
-    Route::get('/invoices', [InvoiceController::class, 'index'])
+    Route::get('/invoices', fn () => to_route('reports.sales'))
         ->name('invoices.index');
 
     Route::post('/invoices', [InvoiceController::class, 'store'])

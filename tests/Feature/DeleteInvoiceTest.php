@@ -56,7 +56,7 @@ test('deleting an invoice removes its items and refreshes the dashboard', functi
 
     $this->delete(route('invoices.destroy', $this->invoice))
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('invoices.index'));
+        ->assertRedirect(route('reports.sales'));
 
     $this->assertDatabaseMissing('invoices', [
         'id' => $this->invoice->id,

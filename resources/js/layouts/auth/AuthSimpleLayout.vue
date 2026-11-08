@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import ThemeToggle from '@/components/ThemeToggle.vue';
 import { home } from '@/routes';
 
 defineProps<{
@@ -11,9 +12,15 @@ defineProps<{
 
 <template>
     <div
-        class="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10"
+        class="relative flex min-h-svh flex-col items-center justify-center bg-background px-4 py-20 sm:px-6"
     >
-        <div class="w-full max-w-sm">
+        <ThemeToggle
+            show-label
+            class="absolute top-4 right-4 sm:top-6 sm:right-6"
+        />
+        <div
+            class="w-full max-w-md rounded-2xl border bg-card p-6 text-card-foreground shadow-sm sm:p-8"
+        >
             <div class="flex flex-col gap-8">
                 <div class="flex flex-col items-center gap-4">
                     <Link

@@ -37,7 +37,7 @@ test('a user can create an invoice for their company customer', function () {
     $this->actingAs($this->user)
         ->post(route('invoices.store'), $this->payload)
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('invoices.index'));
+        ->assertRedirect(route('reports.sales'));
 
     $this->assertDatabaseHas('invoices', [
         'tenant_id' => $this->company->id,

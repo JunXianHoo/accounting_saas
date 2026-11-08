@@ -38,7 +38,7 @@ defineOptions({
                     id="name"
                     type="text"
                     required
-                    v-focus
+                    autofocus
                     :tabindex="1"
                     autocomplete="name"
                     name="name"
