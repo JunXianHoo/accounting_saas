@@ -1,84 +1,94 @@
 x-laravel: &laravel
-  image: accounting-saas-local
-  pull_policy: never
-  init: true
-  environment:
-    APP_URL: "http://localhost:${ACCOUNTING_PORT:-8080}"
-  volumes:
-    - app-config:/var/lib/accounting
+    image: accounting-saas-local
+    pull_policy: never
+    init: true
+    environment:
+        APP_URL: 'http://localhost:${ACCOUNTING_PORT:-8080}'
+    volumes:
+        - app-config:/var/lib/accounting
 
 services:
-  setup:
-    <<: *laravel
-    build: .
-    pull_policy: build
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    command:
-      - sh
-      - -ec
-      - |
-        if [ ! -s .env ]; then
-          umask 077
-          key="$$(php artisan key:generate --show --no-interaction)"
-          cat docker/laravel.env > /var/lib/accounting/.env.tmp
-          printf 'APP_KEY=%s\n' "$$key" >> /var/lib/accounting/.env.tmp
-          mv /var/lib/accounting/.env.tmp /var/lib/accounting/.env
-        fi
-        exec php artisan migrate --force --no-interaction
+    setup:
+        <<: *laravel
+        build: .
+        pull_policy: build
+        depends_on:
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        command:
+            - sh
+            - -ec
+            - |
+                if [ ! -s .env ]; then
+                  umask 077
+                  key="$$(php artisan key:generate --show --no-interaction)"
+                  cat docker/laravel.env > /var/lib/accounting/.env.tmp
+                  printf 'APP_KEY=%s\n' "$$key" >> /var/lib/accounting/.env.tmp
+                  mv /var/lib/accounting/.env.tmp /var/lib/accounting/.env
+                fi
+                exec php artisan migrate --force --no-interaction
 
-  app:
-    <<: *laravel
-    depends_on:
-      setup:
-        condition: service_completed_successfully
-    command: ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
-    ports:
-      - "127.0.0.1:${ACCOUNTING_PORT:-8080}:8000"
+    app:
+        <<: *laravel
+        depends_on:
+            setup:
+                condition: service_completed_successfully
+        command: ['php', 'artisan', 'serve', '--host=0.0.0.0', '--port=8000']
+        ports:
+            - '127.0.0.1:${ACCOUNTING_PORT:-8080}:8000'
 
-  worker:
-    <<: *laravel
-    depends_on:
-      setup:
-        condition: service_completed_successfully
-    command: ["php", "artisan", "queue:work", "redis", "--no-interaction"]
+    worker:
+        <<: *laravel
+        depends_on:
+            setup:
+                condition: service_completed_successfully
+        command: ['php', 'artisan', 'queue:work', 'redis', '--no-interaction']
 
-  scheduler:
-    <<: *laravel
-    depends_on:
-      setup:
-        condition: service_completed_successfully
-    command: ["php", "artisan", "schedule:work", "--no-interaction"]
+    scheduler:
+        <<: *laravel
+        depends_on:
+            setup:
+                condition: service_completed_successfully
+        command: ['php', 'artisan', 'schedule:work', '--no-interaction']
 
-  postgres:
-    image: postgres:17-bookworm
-    environment:
-      POSTGRES_DB: accounting
-      POSTGRES_USER: accounting
-      POSTGRES_PASSWORD: accounting-local
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "accounting", "-d", "accounting"]
-      interval: 5s
-      timeout: 3s
-      retries: 12
+    postgres:
+        image: postgres:17-bookworm
+        environment:
+            POSTGRES_DB: accounting
+            POSTGRES_USER: accounting
+            POSTGRES_PASSWORD: accounting-local
+        volumes:
+            - postgres-data:/var/lib/postgresql/data
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'pg_isready',
+                    '-h',
+                    '127.0.0.1',
+                    '-U',
+                    'accounting',
+                    '-d',
+                    'accounting',
+                ]
+            interval: 5s
+            timeout: 3s
+            retries: 12
 
-  redis:
-    image: redis:7.4-alpine
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes:
-      - redis-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 12
+    redis:
+        image: redis:7.4-alpine
+        command: ['redis-server', '--appendonly', 'yes']
+        volumes:
+            - redis-data:/data
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            interval: 5s
+            timeout: 3s
+            retries: 12
 
 volumes:
-  app-config:
-  postgres-data:
-  redis-data:
+    app-config:
+    postgres-data:
+    redis-data:
