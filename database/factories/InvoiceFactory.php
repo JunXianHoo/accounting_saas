@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\Customer;
 use App\Models\Invoice;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use App\Models\Customer;
 
 /**
  * @extends Factory<Invoice>
@@ -19,6 +19,7 @@ class InvoiceFactory extends Factory
     public function definition(): array
     {
         $issueDate = today();
+
         return [
             'customer_id' => Customer::factory(),
             'issue_date' => $issueDate->toDateString(),

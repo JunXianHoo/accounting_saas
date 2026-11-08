@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Customer;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use App\Models\Customer;
 
 class UpdateCustomerRequest extends FormRequest
 {

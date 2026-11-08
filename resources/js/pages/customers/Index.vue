@@ -25,9 +25,7 @@ defineProps<{
 
 defineOptions({
     layout: {
-        breadcrumbs: [
-            { title: 'Customers', href: '/customers' },
-        ],
+        breadcrumbs: [{ title: 'Customers', href: '/customers' }],
     },
 });
 
@@ -96,7 +94,13 @@ function reactivateCustomer(customer: Customer) {
                         <td class="p-3">{{ customer.email }}</td>
                         <td class="p-3">{{ customer.phone ?? '—' }}</td>
                         <td class="p-3">{{ customer.address ?? '—' }}</td>
-                        <td class="p-3">{{ customer.status === 'AC' ? 'Active' : 'Deactivated' }}</td>
+                        <td class="p-3">
+                            {{
+                                customer.status === 'AC'
+                                    ? 'Active'
+                                    : 'Deactivated'
+                            }}
+                        </td>
                         <td class="p-3">
                             <div class="flex items-center gap-4">
                                 <Link

@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Invoices\CreateInvoice;
+use App\Actions\Invoices\DeleteInvoice;
+use App\Actions\Invoices\RecordPayment;
+use App\Actions\Invoices\UpdateInvoice;
+use App\Http\Requests\StoreInvoiceRequest;
+use App\Http\Requests\StorePaymentRequest;
+use App\Http\Requests\UpdateInvoiceRequest;
+use App\Jobs\SendInvoiceEmail;
+use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
-use App\Actions\Invoices\CreateInvoice;
-use App\Http\Requests\StoreInvoiceRequest;
-use Illuminate\Http\RedirectResponse;
-use App\Models\Customer;
-use App\Actions\Invoices\RecordPayment;
-use App\Http\Requests\StorePaymentRequest;
-use App\Jobs\SendInvoiceEmail;
-use App\Actions\Invoices\UpdateInvoice;
-use App\Http\Requests\UpdateInvoiceRequest;
-use App\Models\InvoiceItem;
-use App\Actions\Invoices\DeleteInvoice;
 
 class InvoiceController extends Controller
 {
@@ -139,5 +139,4 @@ class InvoiceController extends Controller
 
         return to_route('invoices.index');
     }
-
 }

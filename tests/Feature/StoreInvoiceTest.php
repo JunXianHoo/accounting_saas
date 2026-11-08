@@ -1,11 +1,11 @@
 <?php
 
-use App\Models\Customer;
-use App\Models\User;
-use App\Models\Invoice;
-use Stancl\Tenancy\Database\Models\Tenant;
 use App\Jobs\SendInvoiceEmail;
+use App\Models\Customer;
+use App\Models\Invoice;
+use App\Models\User;
 use Illuminate\Support\Facades\Queue;
+use Stancl\Tenancy\Database\Models\Tenant;
 
 beforeEach(function () {
     Queue::fake();
@@ -48,8 +48,7 @@ test('a user can create an invoice for their company customer', function () {
 
     $invoiceId = $this->company->run(fn () => Invoice::sole()->id);
 
-    Queue::assertPushed(SendInvoiceEmail::class, fn (SendInvoiceEmail $job) =>
-        $job->tenantId === $this->company->id
+    Queue::assertPushed(SendInvoiceEmail::class, fn (SendInvoiceEmail $job) => $job->tenantId === $this->company->id
         && $job->invoiceId === $invoiceId
         && $job->afterCommit === true
     );

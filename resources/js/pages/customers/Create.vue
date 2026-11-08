@@ -28,10 +28,7 @@ const form = useForm({
     <div class="max-w-xl space-y-6 p-4">
         <h1 class="text-2xl font-semibold">Add customer</h1>
 
-        <form
-            class="space-y-4"
-            @submit.prevent="form.post('/customers')"
-        >
+        <form class="space-y-4" @submit.prevent="form.post('/customers')">
             <div class="grid gap-2">
                 <Label for="name">Name</Label>
                 <Input
@@ -87,9 +84,7 @@ const form = useForm({
                     {{ form.processing ? 'Saving…' : 'Save customer' }}
                 </Button>
 
-                <Link href="/customers" class="underline">
-                    Cancel
-                </Link>
+                <Link href="/customers" class="underline"> Cancel </Link>
             </div>
         </form>
     </div>

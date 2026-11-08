@@ -15,7 +15,7 @@ use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 class InvoiceItem extends Model
 {
     /** @use HasFactory<InvoiceItemFactory> */
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected static function booted(): void
     {

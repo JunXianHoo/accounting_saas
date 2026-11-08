@@ -3,13 +3,12 @@
 use App\Actions\Invoices\CreateInvoice;
 use App\Actions\Invoices\RecordPayment;
 use App\Models\Customer;
-use App\Models\Payment;
-use App\Support\DashboardCache;
-
-use App\Models\User;
-use Stancl\Tenancy\Database\Models\Tenant;
 use App\Models\Invoice;
+use App\Models\Payment;
+use App\Models\User;
+use App\Support\DashboardCache;
 use Inertia\Testing\AssertableInertia as Assert;
+use Stancl\Tenancy\Database\Models\Tenant;
 
 test('guests are redirected to the login page', function () {
     $this->get(route('dashboard'))
@@ -141,7 +140,6 @@ test('dashboard shows payment totals and balances for the signed-in company', fu
             ->where('invoiceBalances.paid', '80.00')
         );
 });
-
 
 test('committed invoices and payments refresh the cached dashboard', function () {
     $company = Tenant::create(['name' => 'Company A']);

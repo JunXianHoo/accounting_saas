@@ -31,11 +31,25 @@ const model = defineModel<string>({ required: true });
 const open = ref(false);
 const id = useId();
 const selected = computed(() => parseDate(model.value));
-const minimum = computed(() => props.minDate ? parseDate(props.minDate) : undefined);
-const maximum = computed(() => props.maxDate ? parseDate(props.maxDate) : undefined);
+const minimum = computed(() =>
+    props.minDate ? parseDate(props.minDate) : undefined,
+);
+const maximum = computed(() =>
+    props.maxDate ? parseDate(props.maxDate) : undefined,
+);
 const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
 ];
 const formatted = computed(() => {
     const { day, month, year } = selected.value;
@@ -81,22 +95,46 @@ function selectDate(date: DateValue | undefined) {
                         initial-focus
                         @update:model-value="selectDate"
                     >
-                        <CalendarHeader class="mb-2 flex items-center justify-between gap-2">
-                            <CalendarPrev type="button" class="cursor-pointer rounded px-2 py-1 hover:bg-accent disabled:cursor-not-allowed">‹</CalendarPrev>
+                        <CalendarHeader
+                            class="mb-2 flex items-center justify-between gap-2"
+                        >
+                            <CalendarPrev
+                                type="button"
+                                class="cursor-pointer rounded px-2 py-1 hover:bg-accent disabled:cursor-not-allowed"
+                                >‹</CalendarPrev
+                            >
                             <CalendarHeading class="text-sm font-medium" />
-                            <CalendarNext type="button" class="cursor-pointer rounded px-2 py-1 hover:bg-accent disabled:cursor-not-allowed">›</CalendarNext>
+                            <CalendarNext
+                                type="button"
+                                class="cursor-pointer rounded px-2 py-1 hover:bg-accent disabled:cursor-not-allowed"
+                                >›</CalendarNext
+                            >
                         </CalendarHeader>
-                        <CalendarGrid v-for="month in grid" :key="month.value.toString()">
+                        <CalendarGrid
+                            v-for="month in grid"
+                            :key="month.value.toString()"
+                        >
                             <CalendarGridHead>
                                 <CalendarGridRow>
-                                    <CalendarHeadCell v-for="day in weekDays" :key="day" class="text-xs text-muted-foreground">
+                                    <CalendarHeadCell
+                                        v-for="day in weekDays"
+                                        :key="day"
+                                        class="text-xs text-muted-foreground"
+                                    >
                                         {{ day }}
                                     </CalendarHeadCell>
                                 </CalendarGridRow>
                             </CalendarGridHead>
                             <CalendarGridBody>
-                                <CalendarGridRow v-for="(week, index) in month.rows" :key="index">
-                                    <CalendarCell v-for="day in week" :key="day.toString()" :date="day">
+                                <CalendarGridRow
+                                    v-for="(week, index) in month.rows"
+                                    :key="index"
+                                >
+                                    <CalendarCell
+                                        v-for="day in week"
+                                        :key="day.toString()"
+                                        :date="day"
+                                    >
                                         <CalendarCellTrigger
                                             :day="day"
                                             :month="month.value"
@@ -110,6 +148,8 @@ function selectDate(date: DateValue | undefined) {
                 </PopoverContent>
             </PopoverPortal>
         </PopoverRoot>
-        <p v-if="error" :id="`${id}-error`" class="text-sm text-red-600">{{ error }}</p>
+        <p v-if="error" :id="`${id}-error`" class="text-sm text-red-600">
+            {{ error }}
+        </p>
     </div>
 </template>

@@ -4,17 +4,17 @@ namespace App\Models;
 
 use Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
-use Illuminate\Database\Eloquent\Builder;
 use LogicException;
+use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 #[Fillable(['name', 'email', 'phone', 'address'])]
 class Customer extends Model
 {
     /** @use HasFactory<CustomerFactory> */
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected static function booted(): void
     {

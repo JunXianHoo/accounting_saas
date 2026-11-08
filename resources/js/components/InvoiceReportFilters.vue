@@ -1,6 +1,18 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { ChevronDown } from '@lucide/vue';
+import {
+    ComboboxAnchor,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxPortal,
+    ComboboxRoot,
+    ComboboxTrigger,
+    ComboboxViewport,
+} from 'reka-ui';
+import { computed, ref, useId, watch } from 'vue';
 import DateRangePicker from './DateRangePicker.vue';
 import type { InvoiceReportFilters } from '@/types/invoice';
 
@@ -14,6 +26,7 @@ const props = defineProps<{
 function formValues(filters: InvoiceReportFilters) {
     return {
         ...filters,
+        overdueOnly: filters.balance === 'overdue',
         invoice_number: filters.invoice_number ?? '',
         status: filters.status ?? '',
         customer_id: String(filters.customer_id ?? ''),
@@ -22,25 +35,69 @@ function formValues(filters: InvoiceReportFilters) {
 
 const form = useForm(formValues(props.filters));
 const resetting = ref(false);
-
-watch(() => props.filters, (filters) => {
-    Object.assign(form, formValues(filters));
+const customerInputId = useId();
+const customerOptions = computed(() => [
+    { value: 'all', label: '-- All --' },
+    ...props.customers.map((customer) => ({
+        value: String(customer.id),
+        label: customer.name,
+    })),
+]);
+const customerSelection = computed({
+    get: () => form.customer_id || 'all',
+    set: (value: string) => {
+        form.customer_id = value === 'all' ? '' : value;
+    },
 });
 
+function customerLabel(value: string) {
+    return (
+        customerOptions.value.find((option) => option.value === value)?.label ??
+        ''
+    );
+}
+
+function selectCustomerSearchText(event: FocusEvent) {
+    if (event.target instanceof HTMLInputElement) {
+        event.target.select();
+    }
+}
+
+watch(
+    () => props.filters,
+    (filters) => {
+        Object.assign(form, formValues(filters));
+    },
+);
+
 function applyFilters() {
-    form.transform((data) => ({
-        ...data,
-        date_range: data.date_range ? 1 : 0,
-        filter_by_invoice_number: data.filter_by_invoice_number ? 1 : 0,
-    })).get(props.action, { preserveState: true });
+    form.transform(({ overdueOnly, ...data }) => {
+        const outstandingBalance =
+            data.balance === 'outstanding' ? data.balance : null;
+
+        return {
+            ...data,
+            balance: overdueOnly ? 'overdue' : outstandingBalance,
+            date_range: data.date_range ? 1 : 0,
+            filter_by_invoice_number: data.filter_by_invoice_number ? 1 : 0,
+        };
+    }).get(props.action, { preserveState: true });
 }
 
 function resetFilters() {
-    router.get(props.action, {}, {
-        preserveScroll: true,
-        onStart: () => { resetting.value = true; },
-        onFinish: () => { resetting.value = false; },
-    });
+    router.get(
+        props.action,
+        {},
+        {
+            preserveScroll: true,
+            onStart: () => {
+                resetting.value = true;
+            },
+            onFinish: () => {
+                resetting.value = false;
+            },
+        },
+    );
 }
 </script>
 
@@ -49,25 +106,88 @@ function resetFilters() {
         <div class="grid gap-4 sm:grid-cols-2">
             <label class="block">
                 Payment Status
-                <select v-model="form.status" class="mt-1 block w-full rounded border bg-background p-2">
+                <select
+                    v-model="form.status"
+                    class="mt-1 block w-full rounded border bg-background p-2"
+                >
                     <option value="">--All--</option>
                     <option value="unpaid">Unpaid</option>
                     <option value="partial">Partial</option>
                     <option value="paid">Paid</option>
                 </select>
-                <span v-if="form.errors.status" class="text-sm text-red-600">{{ form.errors.status }}</span>
+                <span v-if="form.errors.status" class="text-sm text-red-600">{{
+                    form.errors.status
+                }}</span>
             </label>
 
-            <label class="block">
-                Customer
-                <select v-model="form.customer_id" class="mt-1 block w-full rounded border bg-background p-2">
-                    <option value="">--All--</option>
-                    <option v-for="customer in customers" :key="customer.id" :value="String(customer.id)">
-                        {{ customer.name }}
-                    </option>
-                </select>
-                <span v-if="form.errors.customer_id" class="text-sm text-red-600">{{ form.errors.customer_id }}</span>
-            </label>
+            <div>
+                <label :for="customerInputId">Customer</label>
+                <ComboboxRoot v-model="customerSelection" open-on-click>
+                    <ComboboxAnchor as-child>
+                        <div
+                            class="mt-1 flex items-center rounded border bg-background focus-within:ring-2 focus-within:ring-ring"
+                        >
+                            <ComboboxInput
+                                :id="customerInputId"
+                                :display-value="customerLabel"
+                                :aria-invalid="Boolean(form.errors.customer_id)"
+                                :aria-describedby="
+                                    form.errors.customer_id
+                                        ? `${customerInputId}-error`
+                                        : undefined
+                                "
+                                placeholder="Search customers…"
+                                class="min-w-0 flex-1 bg-transparent p-2 outline-none"
+                                @focus="selectCustomerSearchText"
+                                @keydown.enter.prevent
+                            />
+                            <ComboboxTrigger
+                                class="cursor-pointer px-2"
+                                aria-label="Show customers"
+                            >
+                                <ChevronDown
+                                    class="size-4 opacity-50"
+                                    aria-hidden="true"
+                                />
+                            </ComboboxTrigger>
+                        </div>
+                    </ComboboxAnchor>
+                    <ComboboxPortal>
+                        <ComboboxContent
+                            position="popper"
+                            align="start"
+                            :side-offset="4"
+                            class="z-50 w-[var(--reka-combobox-trigger-width)] rounded border bg-popover text-popover-foreground shadow-md"
+                        >
+                            <ComboboxViewport
+                                class="max-h-60 overflow-y-auto p-1"
+                            >
+                                <ComboboxEmpty
+                                    class="px-2 py-1.5 text-sm text-muted-foreground"
+                                >
+                                    No customers found.
+                                </ComboboxEmpty>
+                                <ComboboxItem
+                                    v-for="option in customerOptions"
+                                    :key="option.value"
+                                    :value="option.value"
+                                    :text-value="option.label"
+                                    class="cursor-pointer rounded px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[state=checked]:font-semibold"
+                                >
+                                    {{ option.label }}
+                                </ComboboxItem>
+                            </ComboboxViewport>
+                        </ComboboxContent>
+                    </ComboboxPortal>
+                </ComboboxRoot>
+                <span
+                    v-if="form.errors.customer_id"
+                    :id="`${customerInputId}-error`"
+                    class="text-sm text-red-600"
+                >
+                    {{ form.errors.customer_id }}
+                </span>
+            </div>
         </div>
 
         <div class="flex flex-wrap gap-4">
@@ -77,8 +197,16 @@ function resetFilters() {
             </label>
 
             <label class="flex cursor-pointer items-center gap-2">
-                <input v-model="form.filter_by_invoice_number" type="checkbox" />
+                <input
+                    v-model="form.filter_by_invoice_number"
+                    type="checkbox"
+                />
                 Invoice no.
+            </label>
+
+            <label class="flex cursor-pointer items-center gap-2">
+                <input v-model="form.overdueOnly" type="checkbox" />
+                Overdue only
             </label>
         </div>
 
@@ -92,7 +220,10 @@ function resetFilters() {
                 placeholder="INV20261228001"
                 class="mt-1 block w-full rounded border bg-background p-2"
             />
-            <span v-if="form.errors.invoice_number" class="text-sm text-red-600">
+            <span
+                v-if="form.errors.invoice_number"
+                class="text-sm text-red-600"
+            >
                 {{ form.errors.invoice_number }}
             </span>
         </label>

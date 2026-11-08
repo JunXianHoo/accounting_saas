@@ -1,9 +1,9 @@
 <?php
 
-use App\Models\Invoice;
 use App\Actions\Invoices\CreateInvoice;
 use App\Actions\Invoices\RecordPayment;
 use App\Models\Customer;
+use App\Models\Invoice;
 use Stancl\Tenancy\Database\Models\Tenant;
 
 test('overdue depends on the due date and payment status', function (

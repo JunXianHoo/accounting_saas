@@ -7,7 +7,7 @@ use Illuminate\Validation\ValidationException;
 class CalculateInvoiceTotals
 {
     /**
-     * @param list<array{description: string, quantity: string, unit_price: string}> $items
+     * @param  list<array{description: string, quantity: string, unit_price: string}>  $items
      * @return array{
      *     subtotal: numeric-string,
      *     items: list<array{description: string, quantity: string, unit_price: string, line_total: numeric-string}>
@@ -37,8 +37,7 @@ class CalculateInvoiceTotals
 
             if (bccomp($lineTotal, $maximum, 2) > 0) {
                 throw ValidationException::withMessages([
-                    "items.$index.unit_price" =>
-                        'This line total exceeds the supported limit.',
+                    "items.$index.unit_price" => 'This line total exceeds the supported limit.',
                 ]);
             }
 

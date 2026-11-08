@@ -12,11 +12,17 @@ const props = defineProps<{
 const from = defineModel<string>('from', { required: true });
 const to = defineModel<string>('to', { required: true });
 
-const fromMaximum = computed(() =>
-    [to.value, props.maxDate].filter((date): date is string => !!date).sort()[0],
+const fromMaximum = computed(
+    () =>
+        [to.value, props.maxDate]
+            .filter((date): date is string => !!date)
+            .sort()[0],
 );
 const toMinimum = computed(() =>
-    [from.value, props.minDate].filter((date): date is string => !!date).sort().at(-1),
+    [from.value, props.minDate]
+        .filter((date): date is string => !!date)
+        .sort()
+        .at(-1),
 );
 </script>
 

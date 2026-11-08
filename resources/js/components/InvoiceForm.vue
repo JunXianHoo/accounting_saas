@@ -16,16 +16,19 @@ interface InvoiceFormData {
     items: InvoiceItem[];
 }
 
-const props = withDefaults(defineProps<{
-    customers: { id: number; name: string }[];
-    action: string;
-    method?: 'post' | 'patch';
-    initialData?: InvoiceFormData;
-    cancelHref?: string;
-}>(), {
-    method: 'post',
-    cancelHref: '/invoices',
-});
+const props = withDefaults(
+    defineProps<{
+        customers: { id: number; name: string }[];
+        action: string;
+        method?: 'post' | 'patch';
+        initialData?: InvoiceFormData;
+        cancelHref?: string;
+    }>(),
+    {
+        method: 'post',
+        cancelHref: '/invoices',
+    },
+);
 
 function newItem(): InvoiceItem {
     return { description: '', quantity: '1', unit_price: '' };
@@ -48,9 +51,7 @@ function submit() {
 </script>
 
 <template>
-
     <div class="mx-auto w-full max-w-3xl space-y-4 p-4">
-
         <p v-if="customers.length === 0" class="text-muted-foreground">
             Add or reactivate a customer before saving an invoice.
         </p>
@@ -62,13 +63,24 @@ function submit() {
 
             <label class="block">
                 Customer
-                <select v-model="form.customer_id" required class="mt-1 block w-full rounded border p-2">
+                <select
+                    v-model="form.customer_id"
+                    required
+                    class="mt-1 block w-full rounded border p-2"
+                >
                     <option disabled value="">Select a customer</option>
-                    <option v-for="customer in customers" :key="customer.id" :value="String(customer.id)">
+                    <option
+                        v-for="customer in customers"
+                        :key="customer.id"
+                        :value="String(customer.id)"
+                    >
                         {{ customer.name }}
                     </option>
                 </select>
-                <span v-if="form.errors.customer_id" class="text-sm text-red-600">
+                <span
+                    v-if="form.errors.customer_id"
+                    class="text-sm text-red-600"
+                >
                     {{ form.errors.customer_id }}
                 </span>
             </label>
@@ -86,29 +98,58 @@ function submit() {
                 />
             </div>
 
-            <p v-if="form.errors.items" class="text-sm text-red-600">{{ form.errors.items }}</p>
+            <p v-if="form.errors.items" class="text-sm text-red-600">
+                {{ form.errors.items }}
+            </p>
 
-            <fieldset v-for="(item, index) in form.items" :key="index" class="space-y-2 rounded border p-3">
+            <fieldset
+                v-for="(item, index) in form.items"
+                :key="index"
+                class="space-y-2 rounded border p-3"
+            >
                 <legend class="px-1 font-medium">Item {{ index + 1 }}</legend>
 
                 <label class="block">
                     Description
-                    <input v-model="item.description" required maxlength="2000" class="mt-1 block w-full rounded border p-2" />
+                    <input
+                        v-model="item.description"
+                        required
+                        maxlength="2000"
+                        class="mt-1 block w-full rounded border p-2"
+                    />
                 </label>
 
                 <div class="grid gap-4 sm:grid-cols-2">
                     <label>
                         Quantity
-                        <input v-model="item.quantity" inputmode="decimal" required class="mt-1 block w-full rounded border p-2" />
+                        <input
+                            v-model="item.quantity"
+                            inputmode="decimal"
+                            required
+                            class="mt-1 block w-full rounded border p-2"
+                        />
                     </label>
 
                     <label>
                         Unit price
-                        <input v-model="item.unit_price" inputmode="decimal" required class="mt-1 block w-full rounded border p-2" />
+                        <input
+                            v-model="item.unit_price"
+                            inputmode="decimal"
+                            required
+                            class="mt-1 block w-full rounded border p-2"
+                        />
                     </label>
                 </div>
 
-                <p v-for="field in (['description', 'quantity', 'unit_price'] as const)" :key="field" class="text-sm text-red-600">
+                <p
+                    v-for="field in [
+                        'description',
+                        'quantity',
+                        'unit_price',
+                    ] as const"
+                    :key="field"
+                    class="text-sm text-red-600"
+                >
                     {{ form.errors[`items.${index}.${field}`] }}
                 </p>
 

@@ -6,13 +6,13 @@ use App\Support\InvoiceNumber;
 use Database\Factories\InvoiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 
 /**
  * @property numeric-string|null $total_paid
@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 class Invoice extends Model
 {
     /** @use HasFactory<InvoiceFactory> */
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected static function booted(): void
     {
@@ -85,7 +85,7 @@ class Invoice extends Model
     }
 
     /** @param Builder<Invoice> $query
-     *  @return Builder<Invoice>
+     * @return Builder<Invoice>
      */
     public function scopeWithPaymentTotals(Builder $query): Builder
     {

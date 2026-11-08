@@ -1,16 +1,16 @@
 <?php
 
+use App\Actions\Invoices\CreateInvoice;
+use App\Actions\Invoices\DeleteInvoice;
+use App\Actions\Invoices\RecordPayment;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\User;
-use Inertia\Testing\AssertableInertia as Assert;
-use App\Actions\Invoices\CreateInvoice;
-use App\Actions\Invoices\DeleteInvoice;
-use Stancl\Tenancy\Database\Models\Tenant;
-use App\Actions\Invoices\RecordPayment;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Validation\ValidationException;
+use Inertia\Testing\AssertableInertia as Assert;
+use Stancl\Tenancy\Database\Models\Tenant;
 
 beforeEach(function () {
     $this->company = Tenant::create(['name' => 'Company A']);

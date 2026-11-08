@@ -1,12 +1,12 @@
 <?php
 
+use App\Actions\Invoices\DeleteInvoice;
 use App\Jobs\SendInvoiceEmail;
 use App\Mail\InvoiceIssued;
 use App\Models\Invoice;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Mail;
 use Stancl\Tenancy\Database\Models\Tenant;
-use App\Actions\Invoices\DeleteInvoice;
 
 test('the invoice email job sends once and records the send time', function () {
     Mail::fake();

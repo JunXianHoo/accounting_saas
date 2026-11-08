@@ -5,18 +5,20 @@ namespace App\Jobs;
 use App\Mail\InvoiceIssued;
 use App\Models\Invoice;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Stancl\Tenancy\Database\Models\Tenant;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class SendInvoiceEmail implements ShouldQueue
 {
     use Queueable;
 
     public int $tries = 3;
+
     public int $backoff = 30;
+
     public int $timeout = 60;
 
     public function __construct(

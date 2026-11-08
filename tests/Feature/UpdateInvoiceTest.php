@@ -1,14 +1,14 @@
 <?php
 
+use App\Actions\Invoices\CreateInvoice;
+use App\Actions\Invoices\RecordPayment;
+use App\Actions\Invoices\UpdateInvoice;
+use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
-use App\Models\Customer;
-use App\Actions\Invoices\CreateInvoice;
-use App\Actions\Invoices\UpdateInvoice;
-use Stancl\Tenancy\Database\Models\Tenant;
-use App\Actions\Invoices\RecordPayment;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Validation\ValidationException;
+use Stancl\Tenancy\Database\Models\Tenant;
 
 beforeEach(function () {
     $this->company = Tenant::create(['name' => 'Company A']);

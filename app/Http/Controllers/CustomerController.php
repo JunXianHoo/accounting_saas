@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCustomerRequest;
+use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\Customer;
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
-use App\Http\Requests\StoreCustomerRequest;
-use Illuminate\Http\RedirectResponse;
-use App\Http\Requests\UpdateCustomerRequest;
 
 class CustomerController extends Controller
 {
@@ -19,7 +18,7 @@ class CustomerController extends Controller
     {
         return Inertia::render('customers/Index', [
             'customers' => Customer::query()
-                ->select(['id', 'name', 'email', 'phone', 'address','status'])
+                ->select(['id', 'name', 'email', 'phone', 'address', 'status'])
                 ->orderBy('name')
                 ->orderBy('id')
                 ->paginate(15),

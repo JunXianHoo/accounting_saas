@@ -64,8 +64,6 @@ function deleteInvoice() {
         preserveScroll: true,
     });
 }
-
-
 </script>
 
 <template>
@@ -74,7 +72,9 @@ function deleteInvoice() {
     <div class="space-y-4 p-4">
         <Link href="/invoices" class="underline">Back to invoices</Link>
 
-        <h1 class="text-2xl font-semibold">Invoice {{ invoice.invoice_number }}</h1>
+        <h1 class="text-2xl font-semibold">
+            Invoice {{ invoice.invoice_number }}
+        </h1>
         <Link
             v-if="invoice.payments.length === 0"
             :href="`/invoices/${invoice.id}/edit`"
@@ -98,7 +98,8 @@ function deleteInvoice() {
                         <DialogTitle>Delete invoice?</DialogTitle>
                         <DialogDescription>
                             Invoice {{ invoice.invoice_number }} and its items
-                            will be permanently deleted. This action cannot be undone.
+                            will be permanently deleted. This action cannot be
+                            undone.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -125,7 +126,11 @@ function deleteInvoice() {
                             class="cursor-pointer rounded bg-destructive px-4 py-2 text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-50"
                             :disabled="deleteForm.processing"
                         >
-                            {{ deleteForm.processing ? 'Deleting…' : 'Delete invoice' }}
+                            {{
+                                deleteForm.processing
+                                    ? 'Deleting…'
+                                    : 'Delete invoice'
+                            }}
                         </button>
                     </DialogFooter>
                 </form>
@@ -155,7 +160,11 @@ function deleteInvoice() {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="item in invoice.items" :key="item.id" class="border-b">
+                    <tr
+                        v-for="item in invoice.items"
+                        :key="item.id"
+                        class="border-b"
+                    >
                         <td class="p-2">{{ item.description }}</td>
                         <td class="p-2 text-right">{{ item.quantity }}</td>
                         <td class="p-2 text-right">{{ item.unit_price }}</td>
@@ -164,8 +173,12 @@ function deleteInvoice() {
                 </tbody>
                 <tfoot>
                     <tr>
-                        <th scope="row" colspan="3" class="p-2 text-right">Invoice total</th>
-                        <td class="p-2 text-right font-semibold">{{ invoice.total }}</td>
+                        <th scope="row" colspan="3" class="p-2 text-right">
+                            Invoice total
+                        </th>
+                        <td class="p-2 text-right font-semibold">
+                            {{ invoice.total }}
+                        </td>
                     </tr>
                 </tfoot>
             </table>
@@ -195,8 +208,12 @@ function deleteInvoice() {
                         <td class="p-2">
                             <DateDisplay :value="payment.paid_at" />
                         </td>
-                        <td class="p-2 break-words">{{ payment.reference ?? '—' }}</td>
-                        <td class="p-2 text-right tabular-nums">{{ payment.amount }}</td>
+                        <td class="p-2 break-words">
+                            {{ payment.reference ?? '—' }}
+                        </td>
+                        <td class="p-2 text-right tabular-nums">
+                            {{ payment.amount }}
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -204,7 +221,10 @@ function deleteInvoice() {
     </section>
 
     <form
-        v-if="invoice.status !== 'paid' && invoice.issue_date.slice(0, 10) <= latestPaymentDate"
+        v-if="
+            invoice.status !== 'paid' &&
+            invoice.issue_date.slice(0, 10) <= latestPaymentDate
+        "
         class="max-w-md space-y-3 rounded border p-4"
         @submit.prevent="submitPayment"
     >
@@ -241,7 +261,10 @@ function deleteInvoice() {
                 placeholder="Bank transaction, cheque, or receipt number"
                 class="mt-1 block w-full rounded border p-2"
             />
-            <span v-if="paymentForm.errors.reference" class="text-sm text-red-600">
+            <span
+                v-if="paymentForm.errors.reference"
+                class="text-sm text-red-600"
+            >
                 {{ paymentForm.errors.reference }}
             </span>
         </label>

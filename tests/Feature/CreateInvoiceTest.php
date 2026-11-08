@@ -2,9 +2,9 @@
 
 use App\Actions\Invoices\CreateInvoice;
 use App\Models\Customer;
-use Stancl\Tenancy\Database\Models\Tenant;
-use Illuminate\Validation\ValidationException;
 use App\Models\InvoiceItem;
+use Illuminate\Validation\ValidationException;
+use Stancl\Tenancy\Database\Models\Tenant;
 
 beforeEach(function () {
     $this->company = Tenant::create(['name' => 'Company A']);

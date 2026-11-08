@@ -10,7 +10,7 @@ final class DashboardCache
     /**
      * @template T
      *
-     * @param callable(): T $load
+     * @param  callable(): T  $load
      * @return T
      */
     public static function remember(string $tenantId, string $date, callable $load): mixed

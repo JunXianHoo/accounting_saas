@@ -59,7 +59,13 @@ defineOptions({
                 :label="card.label"
                 :value="invoiceCounts[card.key]"
                 :href="reportUrl"
-                :query="'status' in card ? { status: card.status } : 'balance' in card ? { balance: card.balance } : undefined"
+                :query="
+                    'status' in card
+                        ? { status: card.status }
+                        : 'balance' in card
+                          ? { balance: card.balance }
+                          : undefined
+                "
             />
         </dl>
 
@@ -77,7 +83,11 @@ defineOptions({
                 :label="card.label"
                 :value="invoiceBalances[card.key]"
                 :href="reportUrl"
-                :query="card.key === 'paid' ? { status: 'paid' } : { balance: card.key }"
+                :query="
+                    card.key === 'paid'
+                        ? { status: 'paid' }
+                        : { balance: card.key }
+                "
             />
         </dl>
     </div>

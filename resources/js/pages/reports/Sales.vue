@@ -3,7 +3,10 @@ import { Head } from '@inertiajs/vue3';
 import InvoiceReportFilters from '@/components/InvoiceReportFilters.vue';
 import InvoiceTable from '@/components/InvoiceTable.vue';
 import PaginationLinks from '@/components/PaginationLinks.vue';
-import type { InvoiceReportFilters as Filters, PaginatedInvoices } from '@/types/invoice';
+import type {
+    InvoiceReportFilters as Filters,
+    PaginatedInvoices,
+} from '@/types/invoice';
 
 defineProps<{
     filters: Filters;
@@ -23,7 +26,11 @@ defineProps<{
         <h1 class="text-2xl font-semibold">Invoice reports</h1>
 
         <p v-if="filters.balance" class="text-sm text-muted-foreground">
-            {{ filters.balance === 'overdue' ? 'Showing overdue balances' : 'Showing outstanding balances' }}
+            {{
+                filters.balance === 'overdue'
+                    ? 'Showing overdue balances'
+                    : 'Showing outstanding balances'
+            }}
         </p>
 
         <InvoiceReportFilters
@@ -36,15 +43,21 @@ defineProps<{
         <dl class="grid gap-4 sm:grid-cols-3">
             <div class="rounded-lg border p-4">
                 <dt class="text-sm text-muted-foreground">Total invoiced</dt>
-                <dd class="mt-2 text-2xl font-semibold tabular-nums">{{ salesTotal }}</dd>
+                <dd class="mt-2 text-2xl font-semibold tabular-nums">
+                    {{ salesTotal }}
+                </dd>
             </div>
             <div class="rounded-lg border p-4">
                 <dt class="text-sm text-muted-foreground">Paid to date</dt>
-                <dd class="mt-2 text-2xl font-semibold tabular-nums">{{ paidTotal }}</dd>
+                <dd class="mt-2 text-2xl font-semibold tabular-nums">
+                    {{ paidTotal }}
+                </dd>
             </div>
             <div class="rounded-lg border p-4">
                 <dt class="text-sm text-muted-foreground">Outstanding</dt>
-                <dd class="mt-2 text-2xl font-semibold tabular-nums">{{ outstandingTotal }}</dd>
+                <dd class="mt-2 text-2xl font-semibold tabular-nums">
+                    {{ outstandingTotal }}
+                </dd>
             </div>
         </dl>
 

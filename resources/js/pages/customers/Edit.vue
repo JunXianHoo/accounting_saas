@@ -19,9 +19,7 @@ const props = defineProps<{
 
 defineOptions({
     layout: {
-        breadcrumbs: [
-            { title: 'Customers', href: '/customers' },
-        ],
+        breadcrumbs: [{ title: 'Customers', href: '/customers' }],
     },
 });
 
@@ -43,10 +41,7 @@ function submit() {
     <div class="max-w-xl space-y-6 p-4">
         <h1 class="text-2xl font-semibold">Edit customer</h1>
 
-        <form
-            class="space-y-4"
-            @submit.prevent="submit"
-        >
+        <form class="space-y-4" @submit.prevent="submit">
             <div class="grid gap-2">
                 <Label for="name">Name</Label>
                 <Input
@@ -102,9 +97,7 @@ function submit() {
                     {{ form.processing ? 'Saving…' : 'Save customer' }}
                 </Button>
 
-                <Link href="/customers" class="underline">
-                    Cancel
-                </Link>
+                <Link href="/customers" class="underline"> Cancel </Link>
             </div>
         </form>
     </div>
