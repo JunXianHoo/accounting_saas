@@ -2,7 +2,26 @@
 
 A shared-database, multi-company accounting application built with Laravel, Inertia, and Vue. It supports customer management, invoices and line items, payment recording, and tenant-scoped invoice reports.
 
-## Requirements
+## Run with Docker
+
+With Docker and the Compose plugin running, start the development stack from the repository root.
+
+```sh
+docker compose up --build -d
+docker compose ps
+```
+
+Open <http://localhost:8080/register> to create a company. Compose builds the frontend, generates a Laravel app key on first startup, and runs database migrations before starting the web app, Redis queue worker, and scheduler. Invoice emails are written to the worker log.
+
+```sh
+docker compose logs worker
+docker compose exec app php artisan invoices:check-overdue
+docker compose exec app php artisan test
+```
+
+After editing the source, run `docker compose up --build -d` to rebuild the image. Run `docker compose down` to stop the stack and retain the database, Redis data, and app key in Docker volumes. To use a different port, run `ACCOUNTING_PORT=8081 docker compose up --build -d` and open <http://localhost:8081/register>.
+
+## Requirements for setup without Docker
 
 - PHP 8.4.1 or later for the locked dependencies, with BCMath, PDO PostgreSQL, and PDO SQLite for tests
 - Composer 2
