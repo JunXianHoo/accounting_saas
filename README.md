@@ -79,6 +79,26 @@ Dashboard totals are cached per company and day. Invoice creation, edits, and de
 
 See the [database ERD](docs/erd.md) for tables and ownership constraints.
 
+## Load demo data
+
+Run the demo seeder explicitly in a local environment after applying migrations. With Docker, rebuild the image so it includes the seeder. Allow several minutes for the first seed run.
+
+```sh
+docker compose up --build -d
+docker compose exec app php artisan db:seed --class=DemoDataSeeder
+```
+
+Without Docker, run `php artisan db:seed --class=DemoDataSeeder`.
+
+| Company       | Login email          |
+| ------------- | -------------------- |
+| Harbor Studio | `demo1@example.test` |
+| Cedar Works   | `demo2@example.test` |
+
+Both demo accounts use `accounting-demo-password`. Each company starts with 200 customers, 2,000 invoices, 6,000 invoice items, and 2,500 payments. Invoice dates span the past year, with unpaid, partially paid, paid, and overdue examples. Open **Invoice Reports** to try the filters and pagination, and switch accounts to view the other company's data.
+
+The seeder creates separate demo companies, skips companies it already seeded, and leaves existing records in place. It runs only in local and testing environments and does not send invoice emails.
+
 ## Verification
 
 ```sh
