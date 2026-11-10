@@ -111,7 +111,7 @@ Without Docker, run `php artisan db:seed --class=DemoDataSeeder`.
 | Harbor Studio | `demo1@example.test` |
 | Cedar Works   | `demo2@example.test` |
 
-Both demo accounts use `accounting-demo-password`. Each company starts with 200 customers, 2,000 invoices, 6,000 invoice items, and 2,500 payments. Invoice dates span the past year, with unpaid, partially paid, paid, and overdue examples. Open **Invoice Reports** to try the filters and pagination, and switch accounts to view the other company's data.
+Both demo accounts use `abc12345`. Each company starts with 200 customers, 2,000 invoices, 6,000 invoice items, and 2,500 payments. Invoice dates span the past year, with unpaid, partially paid, paid, and overdue examples. Open **Invoice Reports** to try the filters and pagination, and switch accounts to view the other company's data.
 
 The seeder creates separate demo companies, skips companies it already seeded, and leaves existing records in place. It runs only in local and testing environments and does not send invoice emails.
 

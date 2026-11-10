@@ -31,7 +31,7 @@ class DemoDataSeeder extends Seeder
                 new User([
                     'name' => "{$name} Demo",
                     'email' => "demo{$companyNumber}@example.test",
-                    'password' => 'accounting-demo-password',
+                    'password' => 'abc12345',
                 ]),
                 function () use ($companyNumber, $createInvoice, $recordPayment): void {
                     $activeCustomerIds = $this->createCustomers($companyNumber);
