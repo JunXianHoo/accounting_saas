@@ -3,11 +3,10 @@
 use App\Models\Customer;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 beforeEach(function () {
-    $this->companyA = Tenant::create(['name' => 'Company A']);
-    $this->companyB = Tenant::create(['name' => 'Company B']);
+    $this->companyA = createTenant(['name' => 'Company A']);
+    $this->companyB = createTenant(['name' => 'Company B']);
 
     $user = User::factory()->create([
         'tenant_id' => $this->companyA->id,
@@ -52,9 +51,8 @@ test('users can update their own customer', function () {
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('customers.index'));
 
-    $this->assertDatabaseHas('customers', [
+    $this->assertTenantDatabaseHas('customers', [
         'id' => $this->customerA->id,
-        'tenant_id' => $this->companyA->id,
         'name' => 'Updated A',
         'email' => 'updated@example.com',
     ]);
@@ -68,7 +66,7 @@ test('invalid updates leave the customer unchanged', function () {
         'email' => 'invalid-email',
     ])->assertSessionHasErrors(['email']);
 
-    $this->assertDatabaseHas('customers', [
+    $this->assertTenantDatabaseHas('customers', [
         'id' => $this->customerA->id,
         'name' => 'Original A',
         'email' => 'a@example.com',
@@ -82,9 +80,8 @@ test('users cannot move customers to another company', function () {
         'tenant_id' => $this->companyB->id,
     ])->assertSessionHasErrors(['tenant_id']);
 
-    $this->assertDatabaseHas('customers', [
+    $this->assertTenantDatabaseHas('customers', [
         'id' => $this->customerA->id,
-        'tenant_id' => $this->companyA->id,
         'name' => 'Original A',
         'email' => 'a@example.com',
     ]);
@@ -103,12 +100,11 @@ test('users cannot update another company customer', function () {
         'email' => 'changed@example.com',
     ])->assertNotFound();
 
-    $this->assertDatabaseHas('customers', [
+    $this->assertTenantDatabaseHas('customers', [
         'id' => $this->customerB->id,
-        'tenant_id' => $this->companyB->id,
         'name' => 'Original B',
         'email' => 'b@example.com',
-    ]);
+    ], $this->companyB);
 
     expect(tenancy()->initialized)->toBeFalse();
 });

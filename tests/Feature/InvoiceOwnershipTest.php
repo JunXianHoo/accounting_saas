@@ -4,11 +4,10 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 beforeEach(function () {
-    $this->companyA = Tenant::create(['name' => 'Company A']);
-    $this->companyB = Tenant::create(['name' => 'Company B']);
+    $this->companyA = createTenant(['name' => 'Company A']);
+    $this->companyB = createTenant(['name' => 'Company B']);
 
     tenancy()->initialize($this->companyA);
     $this->invoiceA = Invoice::factory()->create();
@@ -27,11 +26,11 @@ test('creating invoices requires an active tenant', function () {
     expect(fn () => Invoice::factory()->create([
         'customer_id' => $this->invoiceA->customer_id,
     ]))->toThrow(
-        LogicException::class,
-        'Creating an invoice requires an active tenant.'
+        InvalidArgumentException::class,
+        'Database connection [tenant] not configured.'
     );
 
-    $this->assertDatabaseCount('invoices', 2);
+    $this->assertTenantDatabaseCount('invoices', 1, $this->companyA);
 });
 
 test('creating invoice items requires an active tenant', function () {
@@ -39,39 +38,11 @@ test('creating invoice items requires an active tenant', function () {
         ->for($this->invoiceA)
         ->create()
     )->toThrow(
-        LogicException::class,
-        'Creating an invoice item requires an active tenant.'
+        InvalidArgumentException::class,
+        'Database connection [tenant] not configured.'
     );
 
-    $this->assertDatabaseCount('invoice_items', 0);
-});
-
-test('invoices cannot be assigned another company tenant ID', function () {
-    tenancy()->initialize($this->companyA);
-
-    expect(fn () => Invoice::factory()->create([
-        'tenant_id' => $this->companyB->id,
-        'customer_id' => $this->invoiceA->customer_id,
-    ]))->toThrow(
-        LogicException::class,
-        'The invoice must belong to the active tenant.'
-    );
-
-    $this->assertDatabaseCount('invoices', 2);
-});
-
-test('items cannot be assigned another company tenant ID', function () {
-    tenancy()->initialize($this->companyA);
-
-    expect(fn () => InvoiceItem::factory()
-        ->for($this->invoiceA)
-        ->create(['tenant_id' => $this->companyB->id])
-    )->toThrow(
-        LogicException::class,
-        'The invoice item must belong to the active tenant.'
-    );
-
-    $this->assertDatabaseCount('invoice_items', 0);
+    $this->assertTenantDatabaseCount('invoice_items', 0, $this->companyA);
 });
 
 test('invoices cannot reference another company customer', function () {
@@ -83,7 +54,7 @@ test('invoices cannot reference another company customer', function () {
         ])
     ))->toThrow(QueryException::class);
 
-    $this->assertDatabaseCount('invoices', 2);
+    $this->assertTenantDatabaseCount('invoices', 1, $this->companyA);
 });
 
 test('items cannot reference another company invoice', function () {
@@ -95,5 +66,5 @@ test('items cannot reference another company invoice', function () {
             ->create()
     ))->toThrow(QueryException::class);
 
-    $this->assertDatabaseCount('invoice_items', 0);
+    $this->assertTenantDatabaseCount('invoice_items', 0, $this->companyA);
 });

@@ -1,6 +1,6 @@
 # Accounting database ERD
 
-The application uses one PostgreSQL database. Each business record carries a tenant ID. Framework infrastructure tables are omitted from the diagram.
+The central PostgreSQL database holds the `tenants` and `users` tables. Each company has its own PostgreSQL database containing the business tables. The diagram omits framework infrastructure tables.
 
 ```mermaid
 ---
@@ -21,11 +21,6 @@ config:
 ---
 erDiagram
     TENANTS o|..o{ USERS : has
-    TENANTS ||--o{ CUSTOMERS : owns
-    TENANTS ||--o{ INVOICES : owns
-    TENANTS ||--o{ INVOICE_NUMBER_SEQUENCES : owns
-    TENANTS ||--o{ INVOICE_ITEMS : owns
-    TENANTS ||--o{ PAYMENTS : owns
     CUSTOMERS ||--o{ INVOICES : receives
     INVOICES ||--o{ INVOICE_ITEMS : contains
     INVOICES ||--o{ PAYMENTS : receives
@@ -41,8 +36,7 @@ erDiagram
         string email UK
     }
     CUSTOMERS {
-        bigint id PK
-        string tenant_id FK
+        ulid id PK
         string name
         string email
         string phone
@@ -50,10 +44,9 @@ erDiagram
         string status "AC or DA"
     }
     INVOICES {
-        bigint id PK
-        string tenant_id FK
-        bigint customer_id FK
-        string invoice_number
+        ulid id PK
+        ulid customer_id FK
+        string invoice_number UK
         date issue_date
         date due_date
         string status "unpaid, partial, or paid"
@@ -64,14 +57,12 @@ erDiagram
         timestamp email_first_attempt_at "nullable"
     }
     INVOICE_NUMBER_SEQUENCES {
-        string tenant_id PK, FK
         date issue_date PK
         bigint last_number
     }
     INVOICE_ITEMS {
         bigint id PK
-        string tenant_id FK
-        bigint invoice_id FK
+        ulid invoice_id FK
         text description
         decimal quantity
         decimal unit_price
@@ -79,16 +70,16 @@ erDiagram
     }
     PAYMENTS {
         bigint id PK
-        string tenant_id FK
-        bigint invoice_id FK
+        ulid invoice_id FK
         decimal amount
         date paid_at
         string reference "optional"
+        uuid submission_id "nullable"
     }
 ```
 
-An invoice references a customer through `(tenant_id, customer_id)`. An item or payment references its invoice through `(tenant_id, invoice_id)`. These composite foreign keys reject references across companies, even if an application query omits its tenant filter.
+Each invoice references a customer in its company's database. Items and payments reference invoices in the same database. Invoice and customer IDs are ULIDs, so links from another company do not resolve even when two companies have the same invoice number.
 
-Invoice numbers are unique within a company through `(tenant_id, invoice_number)`. The sequence table uses `(tenant_id, issue_date)` as its primary key so each company has a separate counter per issue date. Invoice edits preserve the number, and deletion leaves the counter intact.
+The tenant database enforces invoice-number uniqueness and keeps one sequence per issue date. Invoice edits preserve the number, and deletion leaves the counter intact.
 
-The authenticated user's company initializes tenant context before route binding. Eloquent scopes restrict business queries to that company. The overdue command iterates companies, and the mail job initializes the company identified in its payload before loading the invoice.
+The authenticated user's company selects the tenant connection before Laravel binds route models. The overdue command iterates companies, and the mail job selects its tenant database using the company ID in the job payload.

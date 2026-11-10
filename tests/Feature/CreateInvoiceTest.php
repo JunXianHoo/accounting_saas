@@ -4,10 +4,9 @@ use App\Actions\Invoices\CreateInvoice;
 use App\Models\Customer;
 use App\Models\InvoiceItem;
 use Illuminate\Validation\ValidationException;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 beforeEach(function () {
-    $this->company = Tenant::create(['name' => 'Company A']);
+    $this->company = createTenant(['name' => 'Company A']);
 
     tenancy()->initialize($this->company);
 
@@ -49,7 +48,6 @@ test('invoice creation calculates and saves multiple items', function () {
 
     $invoice = app(CreateInvoice::class)->handle($this->data);
 
-    expect($invoice->tenant_id)->toBe($this->company->id);
     expect($invoice->customer_id)->toBe($this->customer->id);
     expect($invoice->status)->toBe('unpaid');
     expect($invoice->subtotal)->toBe('129.99');
@@ -64,16 +62,14 @@ test('invoice creation calculates and saves multiple items', function () {
     expect($support->line_total)->toBe('29.99');
 
     foreach ($invoice->items as $item) {
-        expect($item->tenant_id)->toBe($this->company->id);
         expect($item->invoice_id)->toBe($invoice->id);
     }
 
-    $this->assertDatabaseCount('invoices', 1);
-    $this->assertDatabaseCount('invoice_items', 2);
+    $this->assertTenantDatabaseCount('invoices', 1);
+    $this->assertTenantDatabaseCount('invoice_items', 2);
 
-    $this->assertDatabaseHas('invoices', [
+    $this->assertTenantDatabaseHas('invoices', [
         'id' => $invoice->id,
-        'tenant_id' => $this->company->id,
         'customer_id' => $this->customer->id,
         'total' => '129.99',
     ]);
@@ -101,8 +97,8 @@ test('each line is rounded half up before totals are summed', function () {
     expect($invoice->subtotal)->toBe('0.02');
     expect($invoice->total)->toBe('0.02');
 
-    $this->assertDatabaseCount('invoices', 1);
-    $this->assertDatabaseCount('invoice_items', 2);
+    $this->assertTenantDatabaseCount('invoices', 1);
+    $this->assertTenantDatabaseCount('invoice_items', 2);
 });
 
 test('inactive customers cannot receive new invoices', function () {
@@ -112,12 +108,12 @@ test('inactive customers cannot receive new invoices', function () {
     expect(fn () => app(CreateInvoice::class)->handle($this->data))
         ->toThrow(ValidationException::class);
 
-    $this->assertDatabaseCount('invoices', 0);
-    $this->assertDatabaseCount('invoice_items', 0);
+    $this->assertTenantDatabaseCount('invoices', 0);
+    $this->assertTenantDatabaseCount('invoice_items', 0);
 });
 
 test('invoices cannot be created for another company customer', function () {
-    $companyB = Tenant::create(['name' => 'Company B']);
+    $companyB = createTenant(['name' => 'Company B']);
 
     tenancy()->initialize($companyB);
     $customerB = Customer::factory()->create(['status' => 'AC']);
@@ -129,8 +125,8 @@ test('invoices cannot be created for another company customer', function () {
     expect(fn () => app(CreateInvoice::class)->handle($this->data))
         ->toThrow(ValidationException::class);
 
-    $this->assertDatabaseCount('invoices', 0);
-    $this->assertDatabaseCount('invoice_items', 0);
+    $this->assertTenantDatabaseCount('invoices', 0);
+    $this->assertTenantDatabaseCount('invoice_items', 0);
 });
 
 test('line totals exceeding the money column limit are rejected', function () {
@@ -145,8 +141,8 @@ test('line totals exceeding the money column limit are rejected', function () {
     expect(fn () => app(CreateInvoice::class)->handle($this->data))
         ->toThrow(ValidationException::class);
 
-    $this->assertDatabaseCount('invoices', 0);
-    $this->assertDatabaseCount('invoice_items', 0);
+    $this->assertTenantDatabaseCount('invoices', 0);
+    $this->assertTenantDatabaseCount('invoice_items', 0);
 });
 
 test('combined totals exceeding the money column limit are rejected', function () {
@@ -166,8 +162,8 @@ test('combined totals exceeding the money column limit are rejected', function (
     expect(fn () => app(CreateInvoice::class)->handle($this->data))
         ->toThrow(ValidationException::class);
 
-    $this->assertDatabaseCount('invoices', 0);
-    $this->assertDatabaseCount('invoice_items', 0);
+    $this->assertTenantDatabaseCount('invoices', 0);
+    $this->assertTenantDatabaseCount('invoice_items', 0);
 });
 
 test('zero-total invoices are rejected', function () {
@@ -176,8 +172,8 @@ test('zero-total invoices are rejected', function () {
     expect(fn () => app(CreateInvoice::class)->handle($this->data))
         ->toThrow(ValidationException::class);
 
-    $this->assertDatabaseCount('invoices', 0);
-    $this->assertDatabaseCount('invoice_items', 0);
+    $this->assertTenantDatabaseCount('invoices', 0);
+    $this->assertTenantDatabaseCount('invoice_items', 0);
 });
 
 test('invoice and first item roll back when the second item fails', function () {
@@ -189,8 +185,8 @@ test('invoice and first item roll back when the second item fails', function () 
 
     InvoiceItem::creating(function (InvoiceItem $item): void {
         if ($item->description === 'Second item') {
-            $this->assertDatabaseCount('invoices', 1);
-            $this->assertDatabaseCount('invoice_items', 1);
+            $this->assertTenantDatabaseCount('invoices', 1);
+            $this->assertTenantDatabaseCount('invoice_items', 1);
 
             throw new RuntimeException('Simulated item save failure.');
         }
@@ -199,6 +195,6 @@ test('invoice and first item roll back when the second item fails', function () 
     expect(fn () => app(CreateInvoice::class)->handle($this->data))
         ->toThrow(RuntimeException::class, 'Simulated item save failure.');
 
-    $this->assertDatabaseCount('invoices', 0);
-    $this->assertDatabaseCount('invoice_items', 0);
+    $this->assertTenantDatabaseCount('invoices', 0);
+    $this->assertTenantDatabaseCount('invoice_items', 0);
 });

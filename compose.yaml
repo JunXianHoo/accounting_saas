@@ -28,7 +28,8 @@ services:
                   printf 'APP_KEY=%s\n' "$$key" >> /var/lib/accounting/.env.tmp
                   mv /var/lib/accounting/.env.tmp /var/lib/accounting/.env
                 fi
-                exec php artisan migrate --force --no-interaction
+                php artisan migrate --force --no-interaction
+                exec php artisan tenants:migrate --force --no-interaction
 
     app:
         <<: *laravel

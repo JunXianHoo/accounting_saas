@@ -4,9 +4,9 @@ import InvoiceForm from '@/components/InvoiceForm.vue';
 
 const props = defineProps<{
     invoice: {
-        id: number;
+        id: string;
         invoice_number: string;
-        customer_id: number;
+        customer_id: string;
         issue_date: string;
         due_date: string;
         items: {
@@ -15,7 +15,7 @@ const props = defineProps<{
             unit_price: string;
         }[];
     };
-    customers: { id: number; name: string }[];
+    customers: { id: string; name: string }[];
 }>();
 
 const initialData = {

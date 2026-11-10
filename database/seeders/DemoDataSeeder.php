@@ -4,16 +4,16 @@ namespace Database\Seeders;
 
 use App\Actions\Invoices\CreateInvoice;
 use App\Actions\Invoices\RecordPayment;
+use App\Actions\Tenants\ProvisionTenant;
 use App\Models\Customer;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use LogicException;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 class DemoDataSeeder extends Seeder
 {
-    public function run(CreateInvoice $createInvoice, RecordPayment $recordPayment): void
+    public function run(ProvisionTenant $provisionTenant, CreateInvoice $createInvoice, RecordPayment $recordPayment): void
     {
         if (! app()->environment('local', 'testing') || tenancy()->initialized) {
             throw new LogicException('Demo data must be seeded from the central context in a local or testing environment.');
@@ -22,34 +22,26 @@ class DemoDataSeeder extends Seeder
         foreach ([1 => 'Harbor Studio', 2 => 'Cedar Works'] as $companyNumber => $name) {
             $tenantId = "accounting-demo-{$companyNumber}";
 
-            try {
-                DB::transaction(function () use ($tenantId, $name, $companyNumber, $createInvoice, $recordPayment): void {
-                    $tenant = Tenant::query()->firstOrCreate(['id' => $tenantId], ['name' => $name]);
+            if (Tenant::query()->whereKey($tenantId)->exists()) {
+                continue;
+            }
 
-                    if (! $tenant->wasRecentlyCreated) {
-                        return;
-                    }
-
-                    $user = new User([
-                        'name' => "{$name} Demo",
-                        'email' => "demo{$companyNumber}@example.test",
-                        'password' => 'accounting-demo-password',
-                    ]);
-                    $user->tenant()->associate($tenant);
-                    $user->save();
-
-                    tenancy()->initialize($tenant);
-
+            $provisionTenant->handle(
+                new Tenant(['id' => $tenantId, 'name' => $name]),
+                new User([
+                    'name' => "{$name} Demo",
+                    'email' => "demo{$companyNumber}@example.test",
+                    'password' => 'accounting-demo-password',
+                ]),
+                function () use ($companyNumber, $createInvoice, $recordPayment): void {
                     $activeCustomerIds = $this->createCustomers($companyNumber);
                     $this->createInvoices($activeCustomerIds, $companyNumber, $createInvoice, $recordPayment);
-                });
-            } finally {
-                tenancy()->end();
-            }
+                },
+            );
         }
     }
 
-    /** @return list<int> */
+    /** @return list<string> */
     private function createCustomers(int $companyNumber): array
     {
         $activeCustomerIds = [];
@@ -70,7 +62,7 @@ class DemoDataSeeder extends Seeder
         return $activeCustomerIds;
     }
 
-    /** @param list<int> $activeCustomerIds */
+    /** @param list<string> $activeCustomerIds */
     private function createInvoices(
         array $activeCustomerIds,
         int $companyNumber,

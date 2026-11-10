@@ -11,25 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('invoices', function (Blueprint $table) {
-            $table->unique(['tenant_id', 'id']);
-        });
-
         Schema::create('invoice_items', function (Blueprint $table) {
             $table->id();
 
-            $table->string('tenant_id');
-            $table->foreign('tenant_id')
-                ->references('id')
-                ->on('tenants')
-                ->restrictOnDelete();
-
-            $table->foreignId('invoice_id');
-
-            $table->foreign(['tenant_id', 'invoice_id'])
-                ->references(['tenant_id', 'id'])
-                ->on('invoices')
-                ->restrictOnDelete();
+            $table->foreignUlid('invoice_id')->constrained()->restrictOnDelete();
 
             $table->text('description');
             $table->decimal('quantity', 12, 3);
@@ -38,7 +23,7 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->index(['tenant_id', 'invoice_id']);
+            $table->index('invoice_id');
         });
     }
 
@@ -48,9 +33,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('invoice_items');
-
-        Schema::table('invoices', function (Blueprint $table) {
-            $table->dropUnique(['tenant_id', 'id']);
-        });
     }
 };

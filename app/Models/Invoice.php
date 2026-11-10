@@ -8,12 +8,13 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
-use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
+use Stancl\Tenancy\Database\Concerns\TenantConnection;
 
 /**
  * @property numeric-string|null $total_paid
@@ -24,33 +25,12 @@ use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 class Invoice extends Model
 {
     /** @use HasFactory<InvoiceFactory> */
-    use BelongsToTenant, HasFactory;
+    use HasFactory, HasUlids, TenantConnection;
 
     protected static function booted(): void
     {
-        static::addGlobalScope('require_tenant', function (Builder $builder): void {
-            if (! tenancy()->initialized) {
-                throw new LogicException(
-                    'Invoice queries require an active tenant.'
-                );
-            }
-        });
-
         static::creating(function (Invoice $invoice): void {
-            if (! tenancy()->initialized) {
-                throw new LogicException(
-                    'Creating an invoice requires an active tenant.'
-                );
-            }
-
-            if ((string) $invoice->tenant_id !== (string) tenant()->getTenantKey()) {
-                throw new LogicException(
-                    'The invoice must belong to the active tenant.'
-                );
-            }
-
             $invoice->invoice_number = InvoiceNumber::next(
-                (string) $invoice->tenant_id,
                 $invoice->issue_date->toDateString(),
             );
         });

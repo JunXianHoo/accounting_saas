@@ -13,23 +13,12 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->string('tenant_id');
-            $table->foreignId('invoice_id');
+            $table->foreignUlid('invoice_id')->constrained()->restrictOnDelete();
             $table->decimal('amount', 14, 2);
             $table->date('paid_at');
             $table->timestamps();
 
-            $table->foreign('tenant_id')
-                ->references('id')
-                ->on('tenants')
-                ->restrictOnDelete();
-
-            $table->foreign(['tenant_id', 'invoice_id'])
-                ->references(['tenant_id', 'id'])
-                ->on('invoices')
-                ->restrictOnDelete();
-
-            $table->index(['tenant_id', 'invoice_id']);
+            $table->index('invoice_id');
         });
     }
 

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 interface Customer {
-    id: number;
+    id: string;
     name: string;
     email: string;
     phone: string | null;

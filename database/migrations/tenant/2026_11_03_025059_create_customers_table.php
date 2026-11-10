@@ -12,13 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('customers', function (Blueprint $table) {
-            $table->id();
-
-            $table->string('tenant_id')->index();
-            $table->foreign('tenant_id')
-                ->references('id')
-                ->on('tenants')
-                ->restrictOnDelete();
+            $table->ulid('id')->primary();
 
             $table->string('name');
             $table->string('email');

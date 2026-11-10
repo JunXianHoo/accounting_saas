@@ -4,43 +4,16 @@ namespace App\Models;
 
 use Database\Factories\InvoiceItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use LogicException;
-use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
+use Stancl\Tenancy\Database\Concerns\TenantConnection;
 
 #[Fillable(['description', 'quantity', 'unit_price'])]
 class InvoiceItem extends Model
 {
     /** @use HasFactory<InvoiceItemFactory> */
-    use BelongsToTenant, HasFactory;
-
-    protected static function booted(): void
-    {
-        static::addGlobalScope('require_tenant', function (Builder $builder): void {
-            if (! tenancy()->initialized) {
-                throw new LogicException(
-                    'Invoice item queries require an active tenant.'
-                );
-            }
-        });
-
-        static::creating(function (InvoiceItem $item): void {
-            if (! tenancy()->initialized) {
-                throw new LogicException(
-                    'Creating an invoice item requires an active tenant.'
-                );
-            }
-
-            if ((string) $item->tenant_id !== (string) tenant()->getTenantKey()) {
-                throw new LogicException(
-                    'The invoice item must belong to the active tenant.'
-                );
-            }
-        });
-    }
+    use HasFactory, TenantConnection;
 
     /** @return BelongsTo<Invoice, $this> */
     public function invoice(): BelongsTo

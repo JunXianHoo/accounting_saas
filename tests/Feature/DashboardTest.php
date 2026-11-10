@@ -8,7 +8,6 @@ use App\Models\Payment;
 use App\Models\User;
 use App\Support\DashboardCache;
 use Inertia\Testing\AssertableInertia as Assert;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 test('guests are redirected to the login page', function () {
     $this->get(route('dashboard'))
@@ -16,7 +15,7 @@ test('guests are redirected to the login page', function () {
 });
 
 test('users with a company can visit the dashboard', function () {
-    $tenant = Tenant::create([
+    $tenant = createTenant([
         'name' => 'Company A',
     ]);
 
@@ -42,8 +41,8 @@ test('users without a company cannot visit the dashboard', function () {
 });
 
 test('dashboard counts only invoices for the signed-in company', function () {
-    $company = Tenant::create(['name' => 'Company A']);
-    $otherCompany = Tenant::create(['name' => 'Company B']);
+    $company = createTenant(['name' => 'Company A']);
+    $otherCompany = createTenant(['name' => 'Company B']);
     $user = User::factory()->create(['tenant_id' => $company->id]);
 
     $company->run(function () {
@@ -79,8 +78,8 @@ test('dashboard counts only invoices for the signed-in company', function () {
 });
 
 test('dashboard shows payment totals and balances for the signed-in company', function () {
-    $company = Tenant::create(['name' => 'Company A']);
-    $otherCompany = Tenant::create(['name' => 'Company B']);
+    $company = createTenant(['name' => 'Company A']);
+    $otherCompany = createTenant(['name' => 'Company B']);
     $user = User::factory()->create(['tenant_id' => $company->id]);
 
     $company->run(function () {
@@ -142,7 +141,7 @@ test('dashboard shows payment totals and balances for the signed-in company', fu
 });
 
 test('committed invoices and payments refresh the cached dashboard', function () {
-    $company = Tenant::create(['name' => 'Company A']);
+    $company = createTenant(['name' => 'Company A']);
 
     $company->run(function () use ($company) {
         $date = today()->toDateString();
@@ -181,7 +180,7 @@ test('committed invoices and payments refresh the cached dashboard', function ()
 });
 
 test('changing a payment date refreshes the dashboard cache', function () {
-    $company = Tenant::create(['name' => 'Company A']);
+    $company = createTenant(['name' => 'Company A']);
 
     $company->run(function () use ($company) {
         $lastMonth = today()->startOfMonth()->subDay()->toDateString();

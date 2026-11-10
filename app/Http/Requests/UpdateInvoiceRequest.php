@@ -12,7 +12,6 @@ class UpdateInvoiceRequest extends StoreInvoiceRequest
 
         return parent::authorize()
             && $invoice instanceof Invoice
-            && (string) $invoice->tenant_id === (string) tenant()->getTenantKey()
             && ! $invoice->payments()->exists();
     }
 

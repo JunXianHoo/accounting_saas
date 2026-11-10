@@ -47,8 +47,8 @@ class ReportController extends Controller
             'balance' => ['nullable', Rule::in(['outstanding', 'overdue'])],
             'customer_id' => [
                 'nullable',
-                'integer',
-                Rule::exists('customers', 'id')->where('tenant_id', tenant()->getTenantKey()),
+                'ulid',
+                Rule::exists('tenant.customers', 'id'),
             ],
         ])->validate();
 

@@ -11,7 +11,7 @@ import type { InvoiceReportFilters } from '@/types/invoice';
 const props = defineProps<{
     action: string;
     filters: InvoiceReportFilters;
-    customers: { id: number; name: string }[];
+    customers: { id: string; name: string }[];
     maxDate?: string;
 }>();
 

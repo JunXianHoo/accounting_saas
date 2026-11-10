@@ -1,14 +1,14 @@
 <?php
 
 use App\Models\User;
-use Stancl\Tenancy\Database\Models\Tenant;
+use Illuminate\Support\Facades\Schema;
 
 afterEach(function () {
     tenancy()->end();
 });
 
 test('users can create customers for their company', function () {
-    $company = Tenant::create(['name' => 'Company A']);
+    $company = createTenant(['name' => 'Company A']);
     $user = User::factory()->create(['tenant_id' => $company->id]);
 
     $this->actingAs($user)
@@ -21,10 +21,9 @@ test('users can create customers for their company', function () {
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('customers.index'));
 
-    $this->assertDatabaseCount('customers', 1);
+    $this->assertTenantDatabaseCount('customers', 1);
 
-    $this->assertDatabaseHas('customers', [
-        'tenant_id' => $company->id,
+    $this->assertTenantDatabaseHas('customers', [
         'name' => 'John',
         'email' => 'john@example.com',
         'phone' => '0123456789',
@@ -35,18 +34,18 @@ test('users can create customers for their company', function () {
 });
 
 test('customer name and email are required', function () {
-    $company = Tenant::create(['name' => 'Company A']);
+    $company = createTenant(['name' => 'Company A']);
     $user = User::factory()->create(['tenant_id' => $company->id]);
 
     $this->actingAs($user)
         ->post(route('customers.store'), [])
         ->assertSessionHasErrors(['name', 'email']);
 
-    $this->assertDatabaseCount('customers', 0);
+    $this->assertTenantDatabaseCount('customers', 0);
 });
 
 test('customer email must be valid', function () {
-    $company = Tenant::create(['name' => 'Company A']);
+    $company = createTenant(['name' => 'Company A']);
     $user = User::factory()->create(['tenant_id' => $company->id]);
 
     $this->actingAs($user)
@@ -56,12 +55,12 @@ test('customer email must be valid', function () {
         ])
         ->assertSessionHasErrors(['email']);
 
-    $this->assertDatabaseCount('customers', 0);
+    $this->assertTenantDatabaseCount('customers', 0);
 });
 
 test('users cannot submit another company ID', function () {
-    $companyA = Tenant::create(['name' => 'Company A']);
-    $companyB = Tenant::create(['name' => 'Company B']);
+    $companyA = createTenant(['name' => 'Company A']);
+    $companyB = createTenant(['name' => 'Company B']);
     $user = User::factory()->create(['tenant_id' => $companyA->id]);
 
     $this->actingAs($user)
@@ -72,7 +71,7 @@ test('users cannot submit another company ID', function () {
         ])
         ->assertSessionHasErrors(['tenant_id']);
 
-    $this->assertDatabaseCount('customers', 0);
+    $this->assertTenantDatabaseCount('customers', 0);
 });
 
 test('guests cannot create customers', function () {
@@ -81,7 +80,7 @@ test('guests cannot create customers', function () {
         'email' => 'john@example.com',
     ])->assertRedirect(route('login'));
 
-    $this->assertDatabaseCount('customers', 0);
+    expect(Schema::hasTable('customers'))->toBeFalse();
 });
 
 test('users without a company cannot create customers', function () {
@@ -94,5 +93,5 @@ test('users without a company cannot create customers', function () {
         ])
         ->assertForbidden();
 
-    $this->assertDatabaseCount('customers', 0);
+    expect(Schema::hasTable('customers'))->toBeFalse();
 });

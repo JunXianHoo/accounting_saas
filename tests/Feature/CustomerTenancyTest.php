@@ -1,15 +1,15 @@
 <?php
 
 use App\Models\Customer;
-use Stancl\Tenancy\Database\Models\Tenant;
+use Illuminate\Support\Facades\Schema;
 
 afterEach(function () {
     tenancy()->end();
 });
 
 test('customers are isolated between companies', function () {
-    $companyA = Tenant::create(['name' => 'Company A']);
-    $companyB = Tenant::create(['name' => 'Company B']);
+    $companyA = createTenant(['name' => 'Company A']);
+    $companyB = createTenant(['name' => 'Company B']);
 
     tenancy()->initialize($companyA);
     $customerA = Customer::factory()->create();
@@ -17,9 +17,7 @@ test('customers are isolated between companies', function () {
     tenancy()->initialize($companyB);
     $customerB = Customer::factory()->create();
 
-    // Company IDs are assigned automatically.
-    expect($customerA->tenant_id)->toBe($companyA->id);
-    expect($customerB->tenant_id)->toBe($companyB->id);
+    expect(Schema::hasColumn('customers', 'tenant_id'))->toBeFalse();
 
     // Company B can only query its own customer.
     expect(Customer::pluck('id')->all())->toBe([$customerB->id]);
@@ -35,29 +33,15 @@ test('customers are isolated between companies', function () {
 test('customer queries require an active tenant', function () {
     expect(fn () => Customer::all())
         ->toThrow(
-            LogicException::class,
-            'Customer queries require an active tenant.'
+            InvalidArgumentException::class,
+            'Database connection [tenant] not configured.'
         );
 });
 
 test('creating customers requires an active tenant', function () {
     expect(fn () => Customer::factory()->create())
         ->toThrow(
-            LogicException::class,
-            'Creating a customer requires an active tenant.'
+            InvalidArgumentException::class,
+            'Database connection [tenant] not configured.'
         );
-});
-
-test('customers cannot be created for another company', function () {
-    $companyA = Tenant::create(['name' => 'Company A']);
-    $companyB = Tenant::create(['name' => 'Company B']);
-
-    tenancy()->initialize($companyA);
-
-    expect(fn () => Customer::factory()->create([
-        'tenant_id' => $companyB->id,
-    ]))->toThrow(
-        LogicException::class,
-        'The customer must belong to the active tenant.'
-    );
 });

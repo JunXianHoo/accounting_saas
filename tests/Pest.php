@@ -1,5 +1,7 @@
 <?php
 
+use App\Actions\Tenants\ProvisionTenant;
+use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,6 +19,14 @@ use Tests\TestCase;
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
+
+pest()->afterEach(function () {
+    tenancy()->end();
+
+    foreach (Tenant::all() as $tenant) {
+        $tenant->database()->manager()->deleteDatabase($tenant);
+    }
+})->in('Feature');
 
 /*
 |--------------------------------------------------------------------------
@@ -44,7 +54,16 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function createTenant(array $attributes): Tenant
 {
-    // ..
+    $previousTenant = tenant();
+    tenancy()->end();
+
+    try {
+        return app(ProvisionTenant::class)->handle(new Tenant($attributes));
+    } finally {
+        if ($previousTenant !== null) {
+            tenancy()->initialize($previousTenant);
+        }
+    }
 }

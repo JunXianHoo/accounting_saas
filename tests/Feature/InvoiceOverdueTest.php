@@ -4,14 +4,13 @@ use App\Actions\Invoices\CreateInvoice;
 use App\Actions\Invoices\RecordPayment;
 use App\Models\Customer;
 use App\Models\Invoice;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 test('overdue depends on the due date and payment status', function (
     string $status,
     int $daysFromToday,
     bool $expected,
 ) {
-    $invoice = new Invoice([
+    $invoice = (new Invoice)->setRawAttributes([
         'due_date' => today()->addDays($daysFromToday)->toDateString(),
     ]);
     $invoice->status = $status;
@@ -26,7 +25,7 @@ test('overdue depends on the due date and payment status', function (
 ]);
 
 test('an invoice becomes overdue and stops being overdue after full payment', function () {
-    $company = Tenant::create(['name' => 'Company A']);
+    $company = createTenant(['name' => 'Company A']);
 
     $company->run(function () {
         $customer = Customer::factory()->create(['status' => 'AC']);

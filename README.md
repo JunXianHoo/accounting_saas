@@ -1,6 +1,6 @@
 # Accounting assessment
 
-A shared-database, multi-company accounting application built with Laravel, Inertia, and Vue. It supports customer management, invoices and line items, payment recording, and tenant-scoped invoice reports.
+A multi-company accounting application built with Laravel, Inertia, and Vue. PostgreSQL stores accounts in a central database and gives each company its own database for customers, invoices, and payments. Stancl Tenancy switches connections using the signed-in user's company.
 
 ## Run with Docker
 
@@ -11,7 +11,9 @@ docker compose up --build -d
 docker compose ps
 ```
 
-Open <http://localhost:8080/register> to create a company. Compose builds the frontend, generates a Laravel app key on first startup, and runs database migrations before starting the web app, Redis queue worker, and scheduler. Invoice emails are written to the worker log.
+Open <http://localhost:8080/register> to create a company. Compose builds the frontend, generates a Laravel app key on first startup, and runs migrations for the central database and any existing company databases. Registration creates and migrates a new company database before signing the user in. Invoice emails are written to the worker log.
+
+If you already ran the shared-database version, start the multi-database version with fresh volumes by using a new Compose project name. For example, run `ACCOUNTING_PORT=8081 docker compose -p accounting-multidb up --build -d` and open <http://localhost:8081/register>. Use `docker compose -p accounting-multidb` for subsequent commands for that project.
 
 ```sh
 docker compose logs worker
@@ -30,7 +32,7 @@ After editing the source, run `docker compose up --build -d` to rebuild the imag
 
 ## Local setup
 
-1. Start PostgreSQL and Redis. Create a PostgreSQL database named `accounting` and grant your local database role access to it. Check Redis with `redis-cli ping`.
+1. Start PostgreSQL and Redis. Create a fresh PostgreSQL database named `accounting` for the central data. Use a local PostgreSQL role that owns that database and has `CREATEDB` so registration can create company databases. Check Redis with `redis-cli ping`.
 2. On a fresh checkout, run these commands from the project root.
 
     ```sh
@@ -72,6 +74,7 @@ After editing the source, run `docker compose up --build -d` to rebuild the imag
 - Open the invoice to edit or delete it before recording payments. Invoice edits preserve the assigned number. Record a partial payment with an optional reference, then pay the remaining balance.
 - Visit `/dashboard` to see company totals. Monthly receipts use payment dates. Visit `/reports/sales` to filter by invoice number, payment status, customer, or issue-date range.
 - Register a second account to create a separate company and verify that its invoice list and report start empty.
+- Open an invoice URL from the first company while signed in to the second. The app returns `404`.
 
 Invoice amounts use decimal arithmetic. Payment recording locks the invoice, rejects overpayments, and accepts dates from the invoice's issue date through today. Overdue is calculated from the due date and payment status. The daily command checks each company's overdue invoices against recorded payment totals and logs the count.
 
@@ -120,4 +123,4 @@ npm run types:check
 npm run build
 ```
 
-Pest uses in-memory SQLite, array caching, and a synchronous queue by default. Queue and mail tests use fakes where needed. The local worker steps above exercise the Redis queue and log mailer.
+Pest uses an in-memory central SQLite database and a separate temporary SQLite database for each company. Tests clean up company databases after each run. Queue and mail tests use fakes where needed. The local worker steps above exercise the Redis queue and log mailer.

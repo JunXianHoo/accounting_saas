@@ -17,8 +17,7 @@ class UpdateCustomerRequest extends FormRequest
 
         return $this->user() !== null
             && tenancy()->initialized
-            && $customer instanceof Customer
-            && (string) $customer->tenant_id === (string) tenant()->getTenantKey();
+            && $customer instanceof Customer;
     }
 
     /**

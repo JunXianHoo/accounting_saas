@@ -26,7 +26,7 @@ class InvoiceController extends Controller
         $invoice = $createInvoice->handle($request->invoiceData());
 
         SendInvoiceEmail::dispatch(
-            (string) $invoice->tenant_id,
+            (string) tenant()->getTenantKey(),
             $invoice->id,
         )->afterCommit();
 

@@ -1,6 +1,10 @@
 <?php
 
+use App\Actions\Tenants\ProvisionTenant;
+use App\Models\Tenant;
 use App\Models\User;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Fortify\Features;
 
 beforeEach(function () {
@@ -35,4 +39,28 @@ test('new users can register', function () {
     ]);
 
     $this->assertDatabaseCount('tenants', 1);
+
+    expect(Schema::hasTable('invoices'))->toBeFalse();
+    $user->tenant->run(function () {
+        expect(Schema::hasTable('invoices'))->toBeTrue();
+        expect(Schema::hasTable('users'))->toBeFalse();
+    });
+});
+
+test('a failed owner save removes the new company database', function () {
+    $existing = User::factory()->create();
+    $tenant = new Tenant(['name' => 'Company A']);
+    $owner = new User([
+        'name' => 'Second User',
+        'email' => $existing->email,
+        'password' => 'password',
+    ]);
+
+    expect(fn () => app(ProvisionTenant::class)->handle($tenant, $owner))
+        ->toThrow(QueryException::class);
+
+    expect(tenancy()->initialized)->toBeFalse();
+    expect($tenant->database()->manager()->databaseExists($tenant->database()->getName()))->toBeFalse();
+    $this->assertDatabaseCount('tenants', 0);
+    $this->assertDatabaseCount('users', 1);
 });

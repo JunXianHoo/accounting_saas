@@ -3,10 +3,9 @@
 use App\Models\Invoice;
 use App\Models\User;
 use Illuminate\Support\Str;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 beforeEach(function () {
-    $this->company = Tenant::create(['name' => 'Company A']);
+    $this->company = createTenant(['name' => 'Company A']);
     $this->user = User::factory()->create([
         'tenant_id' => $this->company->id,
     ]);
@@ -29,15 +28,14 @@ test('a user can record a payment on their company invoice', function () {
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('invoices.show', $this->invoice));
 
-    $this->assertDatabaseHas('payments', [
+    $this->assertTenantDatabaseHas('payments', [
         'invoice_id' => $this->invoice->id,
-        'tenant_id' => $this->company->id,
         'amount' => '30.00',
         'reference' => 'BANK-12345',
         'submission_id' => $this->submissionId,
     ]);
 
-    $this->assertDatabaseHas('invoices', [
+    $this->assertTenantDatabaseHas('invoices', [
         'id' => $this->invoice->id,
         'status' => 'partial',
     ]);
@@ -59,8 +57,8 @@ test('retries of the same payment submission are recorded only once', function (
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('invoices.show', $this->invoice));
 
-    $this->assertDatabaseCount('payments', 1);
-    $this->assertDatabaseHas('invoices', ['id' => $this->invoice->id, 'status' => $status]);
+    $this->assertTenantDatabaseCount('payments', 1);
+    $this->assertTenantDatabaseHas('invoices', ['id' => $this->invoice->id, 'status' => $status]);
 })->with([
     'partial payment' => ['30.00', 'partial'],
     'full payment' => ['100.00', 'paid'],
@@ -80,7 +78,7 @@ test('separate payment submissions can have identical details', function () {
     $this->post($route, [...$payload, 'submission_id' => (string) Str::uuid()])
         ->assertSessionHasNoErrors();
 
-    $this->assertDatabaseCount('payments', 2);
+    $this->assertTenantDatabaseCount('payments', 2);
 });
 
 test('a submission ID cannot be reused with different payment details', function () {
@@ -95,8 +93,8 @@ test('a submission ID cannot be reused with different payment details', function
     $this->post($route, $payload)->assertSessionHasNoErrors();
     $this->post($route, [...$payload, 'amount' => '40.00'])->assertSessionHasErrors('submission_id');
 
-    $this->assertDatabaseCount('payments', 1);
-    $this->assertDatabaseHas('payments', ['submission_id' => $this->submissionId, 'amount' => '30.00']);
+    $this->assertTenantDatabaseCount('payments', 1);
+    $this->assertTenantDatabaseHas('payments', ['submission_id' => $this->submissionId, 'amount' => '30.00']);
 });
 
 test('a valid payment submission ID is required', function (?string $submissionId) {
@@ -108,21 +106,21 @@ test('a valid payment submission ID is required', function (?string $submissionI
         ])
         ->assertSessionHasErrors('submission_id');
 
-    $this->assertDatabaseCount('payments', 0);
+    $this->assertTenantDatabaseCount('payments', 0);
 })->with(['missing ID' => [null], 'malformed ID' => ['invalid']]);
 
 test('a user can record a payment on the invoice issue date', function () {
     $this->actingAs($this->user)
         ->post(route('invoices.payments.store', $this->invoice), [
             'amount' => '30.00',
-            'paid_at' => $this->invoice->issue_date->toDateString(),
+            'paid_at' => $this->company->run(fn () => $this->invoice->issue_date->toDateString()),
             'submission_id' => $this->submissionId,
         ])
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('invoices.show', $this->invoice));
 
-    $this->assertDatabaseCount('payments', 1);
-    $this->assertDatabaseHas('payments', [
+    $this->assertTenantDatabaseCount('payments', 1);
+    $this->assertTenantDatabaseHas('payments', [
         'invoice_id' => $this->invoice->id,
         'reference' => null,
     ]);
@@ -138,20 +136,20 @@ test('a payment reference cannot exceed 255 characters', function () {
         ])
         ->assertSessionHasErrors('reference');
 
-    $this->assertDatabaseCount('payments', 0);
+    $this->assertTenantDatabaseCount('payments', 0);
 });
 
 test('a user cannot record a payment before the invoice issue date', function () {
     $this->actingAs($this->user)
         ->post(route('invoices.payments.store', $this->invoice), [
             'amount' => '30.00',
-            'paid_at' => $this->invoice->issue_date->subDay()->toDateString(),
+            'paid_at' => $this->company->run(fn () => $this->invoice->issue_date->subDay()->toDateString()),
             'submission_id' => $this->submissionId,
         ])
         ->assertSessionHasErrors('paid_at');
 
-    $this->assertDatabaseCount('payments', 0);
-    $this->assertDatabaseHas('invoices', [
+    $this->assertTenantDatabaseCount('payments', 0);
+    $this->assertTenantDatabaseHas('invoices', [
         'id' => $this->invoice->id,
         'status' => 'unpaid',
     ]);
@@ -166,11 +164,11 @@ test('a user cannot record a payment for a future date', function () {
         ])
         ->assertSessionHasErrors('paid_at');
 
-    $this->assertDatabaseCount('payments', 0);
+    $this->assertTenantDatabaseCount('payments', 0);
 });
 
 test('a user cannot record a payment on another company invoice', function () {
-    $otherCompany = Tenant::create(['name' => 'Company B']);
+    $otherCompany = createTenant(['name' => 'Company B']);
     $otherInvoice = $otherCompany->run(fn () => Invoice::factory()->create([
         'subtotal' => '100.00',
         'total' => '100.00',
@@ -184,5 +182,5 @@ test('a user cannot record a payment on another company invoice', function () {
         ])
         ->assertNotFound();
 
-    $this->assertDatabaseCount('payments', 0);
+    $this->assertTenantDatabaseCount('payments', 0);
 });

@@ -6,15 +6,15 @@ use Illuminate\Support\Facades\DB;
 
 class InvoiceNumber
 {
-    public static function next(string $tenantId, string $issueDate): string
+    public static function next(string $issueDate): string
     {
-        return DB::transaction(function () use ($tenantId, $issueDate): string {
-            $sequence = DB::table('invoice_number_sequences')
-                ->where('tenant_id', $tenantId)
+        $connection = DB::connection('tenant');
+
+        return $connection->transaction(function () use ($connection, $issueDate): string {
+            $sequence = $connection->table('invoice_number_sequences')
                 ->where('issue_date', $issueDate);
 
-            DB::table('invoice_number_sequences')->insertOrIgnore([
-                'tenant_id' => $tenantId,
+            $connection->table('invoice_number_sequences')->insertOrIgnore([
                 'issue_date' => $issueDate,
                 'last_number' => 0,
             ]);

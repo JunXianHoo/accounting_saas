@@ -4,14 +4,13 @@ namespace App\Jobs;
 
 use App\Mail\InvoiceIssued;
 use App\Models\Invoice;
+use App\Models\Tenant;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use RuntimeException;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 class SendInvoiceEmail implements ShouldQueue
 {
@@ -25,7 +24,7 @@ class SendInvoiceEmail implements ShouldQueue
 
     public function __construct(
         public string $tenantId,
-        public int $invoiceId,
+        public string $invoiceId,
     ) {}
 
     public function handle(): void
@@ -74,23 +73,9 @@ class SendInvoiceEmail implements ShouldQueue
 
     private function pendingInvoiceForUpdate(): ?Invoice
     {
-        try {
-            $invoice = Invoice::query()
-                ->lockForUpdate()
-                ->findOrFail($this->invoiceId);
-        } catch (ModelNotFoundException $exception) {
-            $stillExists = DB::table('invoices')
-                ->where('id', $this->invoiceId)
-                ->exists();
+        $invoice = Invoice::query()->lockForUpdate()->find($this->invoiceId);
 
-            if ($stillExists) {
-                throw $exception;
-            }
-
-            return null;
-        }
-
-        return $invoice->emailed_at === null ? $invoice : null;
+        return $invoice?->emailed_at === null ? $invoice : null;
     }
 
     private function prepareResendDelivery(): void
