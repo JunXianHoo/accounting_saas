@@ -3,8 +3,24 @@
 The application uses one PostgreSQL database. Each business record carries a tenant ID. Framework infrastructure tables are omitted from the diagram.
 
 ```mermaid
+---
+config:
+    theme: base
+    themeVariables:
+        darkMode: true
+        primaryColor: '#0f172a'
+        primaryTextColor: '#f8fafc'
+        primaryBorderColor: '#3b82f6'
+        textColor: '#f8fafc'
+        nodeTextColor: '#f8fafc'
+        lineColor: '#3b82f6'
+        tertiaryColor: '#1e293b'
+        edgeLabelBackground: '#1e293b'
+        attributeBackgroundColorOdd: '#1e293b'
+        attributeBackgroundColorEven: '#334155'
+---
 erDiagram
-    TENANTS o|--o{ USERS : has
+    TENANTS o|..o{ USERS : has
     TENANTS ||--o{ CUSTOMERS : owns
     TENANTS ||--o{ INVOICES : owns
     TENANTS ||--o{ INVOICE_NUMBER_SEQUENCES : owns
@@ -22,7 +38,7 @@ erDiagram
         bigint id PK
         string tenant_id FK
         string name
-        string email
+        string email UK
     }
     CUSTOMERS {
         bigint id PK
@@ -44,6 +60,8 @@ erDiagram
         decimal subtotal
         decimal total
         timestamp emailed_at
+        json email_payload "nullable"
+        timestamp email_first_attempt_at "nullable"
     }
     INVOICE_NUMBER_SEQUENCES {
         string tenant_id PK, FK
