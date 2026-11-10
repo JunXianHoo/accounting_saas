@@ -20,6 +20,7 @@ return [
 
     'resend' => [
         'key' => env('RESEND_API_KEY'),
+        'invoice_delivery' => env('INVOICE_EMAIL_USE_RESEND', false),
     ],
 
     'ses' => [

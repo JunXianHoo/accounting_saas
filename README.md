@@ -79,6 +79,18 @@ Dashboard totals are cached per company and day. Invoice creation, edits, and de
 
 See the [database ERD](docs/erd.md) for tables and ownership constraints.
 
+## Send invoice emails through Resend
+
+The demo uses the log mailer. For real invoice emails, apply the latest migrations and set these values in the environment used by the queue worker.
+
+```dotenv
+INVOICE_EMAIL_USE_RESEND=true
+RESEND_API_KEY=your_resend_api_key
+MAIL_FROM_ADDRESS=invoices@your-verified-domain.example
+```
+
+Restart the queue worker after changing its environment. The job saves the original email content and reuses it with the same idempotency key on each retry. Automatic sending stops 23 hours after the first attempt. If delivery is still uncertain at that point, check the Resend logs before resending.
+
 ## Load demo data
 
 Run the demo seeder explicitly in a local environment after applying migrations. With Docker, rebuild the image so it includes the seeder. Allow several minutes for the first seed run.

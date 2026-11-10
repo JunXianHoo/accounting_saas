@@ -8,7 +8,9 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use RuntimeException;
 use Stancl\Tenancy\Database\Models\Tenant;
 
 class SendInvoiceEmail implements ShouldQueue
@@ -34,29 +36,29 @@ class SendInvoiceEmail implements ShouldQueue
         try {
             tenancy()->initialize($company);
 
-            DB::transaction(function () {
-                try {
-                    $invoice = Invoice::query()
-                        ->lockForUpdate()
-                        ->findOrFail($this->invoiceId);
-                } catch (ModelNotFoundException $exception) {
-                    $stillExists = DB::table('invoices')
-                        ->where('id', $this->invoiceId)
-                        ->exists();
+            $useResend = config('services.resend.invoice_delivery');
 
-                    if ($stillExists) {
-                        throw $exception;
+            if ($useResend) {
+                $this->prepareResendDelivery();
+            }
+
+            DB::transaction(function () use ($useResend): void {
+                $invoice = $this->pendingInvoiceForUpdate();
+
+                if ($invoice === null) {
+                    return;
+                }
+
+                if ($useResend) {
+                    $this->sendViaResend($invoice);
+                } else {
+                    if ($invoice->email_payload !== null) {
+                        throw new RuntimeException('Enable Resend to retry this invoice email.');
                     }
 
-                    return;
+                    $invoice->load(['customer', 'items']);
+                    Mail::to($invoice->customer->email)->send(new InvoiceIssued($invoice));
                 }
-                if ($invoice->emailed_at !== null) {
-                    return;
-                }
-
-                $invoice->load(['customer', 'items']);
-
-                Mail::to($invoice->customer->email)->send(new InvoiceIssued($invoice));
 
                 $invoice->emailed_at = now();
                 $invoice->save();
@@ -67,6 +69,78 @@ class SendInvoiceEmail implements ShouldQueue
             } else {
                 tenancy()->initialize($previousTenant);
             }
+        }
+    }
+
+    private function pendingInvoiceForUpdate(): ?Invoice
+    {
+        try {
+            $invoice = Invoice::query()
+                ->lockForUpdate()
+                ->findOrFail($this->invoiceId);
+        } catch (ModelNotFoundException $exception) {
+            $stillExists = DB::table('invoices')
+                ->where('id', $this->invoiceId)
+                ->exists();
+
+            if ($stillExists) {
+                throw $exception;
+            }
+
+            return null;
+        }
+
+        return $invoice->emailed_at === null ? $invoice : null;
+    }
+
+    private function prepareResendDelivery(): void
+    {
+        // Commit the payload before the first HTTP request so it survives a failed send attempt.
+        DB::transaction(function (): void {
+            $invoice = $this->pendingInvoiceForUpdate();
+
+            if ($invoice === null || $invoice->email_payload !== null) {
+                return;
+            }
+
+            $invoice->load(['customer', 'items']);
+            $mail = new InvoiceIssued($invoice);
+
+            $invoice->email_payload = [
+                'from' => config('mail.from.address'),
+                'to' => [$invoice->customer->email],
+                'subject' => $mail->envelope()->subject,
+                'text' => $mail->render(),
+            ];
+            $invoice->email_first_attempt_at = now();
+            $invoice->save();
+        });
+    }
+
+    private function sendViaResend(Invoice $invoice): void
+    {
+        $firstAttempt = $invoice->email_first_attempt_at;
+
+        // Leave a margin inside Resend's 24-hour deduplication window.
+        if ($firstAttempt === null || $firstAttempt->addHours(23)->lte(now())) {
+            throw new RuntimeException('Invoice email retry window expired. Check the Resend logs before resending.');
+        }
+
+        $key = config('services.resend.key');
+
+        if (! is_string($key) || $key === '') {
+            throw new RuntimeException('Set RESEND_API_KEY to enable invoice email delivery.');
+        }
+
+        $emailId = Http::withToken($key)
+            ->withHeader('Idempotency-Key', "invoice-issued/{$this->tenantId}/{$this->invoiceId}")
+            ->timeout(15)
+            ->post('https://api.resend.com/emails', $invoice->email_payload)
+            ->throw()
+            ->json('id');
+
+        if (! is_string($emailId) || $emailId === '') {
+            throw new RuntimeException('Resend did not return an email ID.');
         }
     }
 }

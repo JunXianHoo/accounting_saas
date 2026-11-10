@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Support\InvoiceNumber;
 use Database\Factories\InvoiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,6 +20,7 @@ use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
  * @property numeric-string $outstanding_balance
  */
 #[Fillable(['customer_id', 'issue_date', 'due_date'])]
+#[Hidden(['email_payload', 'email_first_attempt_at'])]
 class Invoice extends Model
 {
     /** @use HasFactory<InvoiceFactory> */
@@ -116,6 +118,8 @@ class Invoice extends Model
             'subtotal' => 'decimal:2',
             'total' => 'decimal:2',
             'emailed_at' => 'datetime',
+            'email_payload' => 'array',
+            'email_first_attempt_at' => 'immutable_datetime',
         ];
     }
 }
