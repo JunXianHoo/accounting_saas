@@ -74,7 +74,13 @@ class InvoiceController extends Controller
     ): RedirectResponse {
         $data = $request->validated();
 
-        $recordPayment->handle($invoice, $data['amount'], $data['paid_at'], $data['reference'] ?? null);
+        $recordPayment->handle(
+            $invoice,
+            $data['amount'],
+            $data['paid_at'],
+            $data['reference'] ?? null,
+            $data['submission_id'],
+        );
 
         return to_route('invoices.show', $invoice);
     }

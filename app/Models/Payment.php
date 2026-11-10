@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Support\DashboardCache;
 use Database\Factories\PaymentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,8 @@ use Illuminate\Support\Facades\DB;
 use LogicException;
 use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
-#[Fillable(['amount', 'paid_at', 'reference'])]
+#[Fillable(['amount', 'paid_at', 'reference', 'submission_id'])]
+#[Hidden(['submission_id'])]
 class Payment extends Model
 {
     /** @use HasFactory<PaymentFactory> */

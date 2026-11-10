@@ -24,6 +24,7 @@ class StorePaymentRequest extends FormRequest
         }
 
         return [
+            'submission_id' => ['required', 'uuid'],
             'reference' => ['nullable', 'string', 'max:255'],
             'amount' => [
                 'bail',

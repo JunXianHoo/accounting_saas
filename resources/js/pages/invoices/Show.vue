@@ -81,12 +81,20 @@ const paymentForm = useForm({
     amount: '',
     paid_at: props.latestPaymentDate,
     reference: '',
+    submission_id: '',
 });
 
 function submitPayment() {
+    if (paymentForm.processing) {
+        return;
+    }
+
+    paymentForm.submission_id ||= crypto.randomUUID();
+
     paymentForm.post(`/invoices/${props.invoice.id}/payments`, {
         preserveScroll: true,
-        onSuccess: () => paymentForm.reset('amount', 'reference'),
+        onSuccess: () =>
+            paymentForm.reset('amount', 'reference', 'submission_id'),
     });
 }
 
@@ -253,6 +261,10 @@ function deleteInvoice() {
                 {{ paymentForm.errors.reference }}
             </span>
         </label>
+
+        <p v-if="paymentForm.errors.submission_id" class="text-sm text-red-600">
+            {{ paymentForm.errors.submission_id }}
+        </p>
 
         <Button type="submit" :disabled="paymentForm.processing">
             {{ paymentForm.processing ? 'Saving…' : 'Record payment' }}

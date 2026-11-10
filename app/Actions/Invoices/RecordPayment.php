@@ -10,8 +10,13 @@ use Illuminate\Validation\ValidationException;
 
 class RecordPayment
 {
-    public function handle(Invoice $invoice, string $amount, string $paidAt, ?string $reference = null): Payment
-    {
+    public function handle(
+        Invoice $invoice,
+        string $amount,
+        string $paidAt,
+        ?string $reference = null,
+        ?string $submissionId = null,
+    ): Payment {
         if (
             ! is_numeric($amount)
             || ! preg_match('/\A[0-9]{1,12}(?:\.[0-9]{1,2})?\z/', $amount)
@@ -22,11 +27,31 @@ class RecordPayment
             ]);
         }
 
-        return DB::transaction(function () use ($invoice, $amount, $paidAt, $reference): Payment {
+        $submissionId = $submissionId === null ? null : strtolower($submissionId);
+
+        return DB::transaction(function () use ($invoice, $amount, $paidAt, $reference, $submissionId): Payment {
             $lockedInvoice = Invoice::query()
                 ->whereKey($invoice->getKey())
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            if ($submissionId !== null) {
+                $existingPayment = $lockedInvoice->payments()->where('submission_id', $submissionId)->first();
+
+                if ($existingPayment !== null) {
+                    if (
+                        bccomp($existingPayment->amount, $amount, 2) !== 0
+                        || $existingPayment->paid_at->toDateString() !== $paidAt
+                        || $existingPayment->reference !== $reference
+                    ) {
+                        throw ValidationException::withMessages([
+                            'submission_id' => 'This submission already recorded a payment with different details. Refresh the page and review the recorded payments before submitting again.',
+                        ]);
+                    }
+
+                    return $existingPayment;
+                }
+            }
 
             $paid = '0.00';
 
@@ -46,6 +71,7 @@ class RecordPayment
                 'amount' => $amount,
                 'paid_at' => $paidAt,
                 'reference' => $reference,
+                'submission_id' => $submissionId,
             ]);
 
             $lockedInvoice->status = bccomp($amount, $balance, 2) === 0
