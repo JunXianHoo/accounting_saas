@@ -4,10 +4,9 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 beforeEach(function () {
-    $this->company = Tenant::create(['name' => 'Company A']);
+    $this->company = createTenant(['name' => 'Company A']);
     $this->user = User::factory()->create([
         'tenant_id' => $this->company->id,
     ]);
@@ -40,7 +39,7 @@ test('a user can view their company invoice and its items', function () {
 });
 
 test('a user cannot view another company invoice', function () {
-    $otherCompany = Tenant::create(['name' => 'Company B']);
+    $otherCompany = createTenant(['name' => 'Company B']);
     $invoice = $otherCompany->run(fn () => Invoice::factory()->create());
 
     $this->actingAs($this->user)

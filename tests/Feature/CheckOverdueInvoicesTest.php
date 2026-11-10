@@ -2,11 +2,10 @@
 
 use App\Models\Invoice;
 use Illuminate\Support\Facades\Artisan;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 test('the overdue command checks each company separately', function () {
-    $company = Tenant::create(['name' => 'Company A']);
-    $otherCompany = Tenant::create(['name' => 'Company B']);
+    $company = createTenant(['name' => 'Company A']);
+    $otherCompany = createTenant(['name' => 'Company B']);
 
     $company->run(function () {
         $pastInvoice = [
@@ -52,7 +51,7 @@ test('the overdue command checks each company separately', function () {
 });
 
 test('fully settled invoices are excluded even when their status is outdated', function () {
-    $company = Tenant::create(['name' => 'Company A']);
+    $company = createTenant(['name' => 'Company A']);
 
     $company->run(function () {
         $invoice = Invoice::factory()->create([

@@ -14,7 +14,7 @@ class UpdateInvoice
 {
     /**
      * @param array{
-     *     customer_id: int|string,
+     *     customer_id: string,
      *     issue_date: string,
      *     due_date: string,
      *     items: list<array{description: string, quantity: string, unit_price: string}>
@@ -79,7 +79,7 @@ class UpdateInvoice
                 $lockedInvoice->items()->save($item);
             }
 
-            $tenantId = (string) $lockedInvoice->tenant_id;
+            $tenantId = (string) tenant()->getTenantKey();
 
             DB::afterCommit(
                 fn () => DashboardCache::invalidate($tenantId)

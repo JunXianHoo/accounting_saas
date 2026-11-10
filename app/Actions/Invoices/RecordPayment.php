@@ -80,7 +80,7 @@ class RecordPayment
 
             $lockedInvoice->save();
 
-            $tenantId = (string) $lockedInvoice->tenant_id;
+            $tenantId = (string) tenant()->getTenantKey();
             DB::afterCommit(fn () => DashboardCache::invalidate($tenantId));
 
             return $payment;

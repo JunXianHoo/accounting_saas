@@ -16,7 +16,7 @@ class CreateInvoice
      * Create an invoice from validated input.
      *
      * @param array{
-     *     customer_id: int|string,
+     *     customer_id: string,
      *     issue_date: string,
      *     due_date: string,
      *     items: list<array{
@@ -73,7 +73,7 @@ class CreateInvoice
                 $invoice->items()->save($item);
             }
 
-            $tenantId = (string) $invoice->tenant_id;
+            $tenantId = (string) tenant()->getTenantKey();
             DB::afterCommit(fn () => DashboardCache::invalidate($tenantId));
 
             return $invoice->load(['customer', 'items']);

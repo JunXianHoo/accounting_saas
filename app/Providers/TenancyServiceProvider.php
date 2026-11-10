@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Support\ConfigurationUrlParser;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -77,7 +78,17 @@ class TenancyServiceProvider extends ServiceProvider
 
     public function register(): void
     {
-        //
+        $template = config('tenancy.database.template_tenant_connection')
+            ?? config('tenancy.database.central_connection');
+        $connection = config("database.connections.{$template}");
+
+        if (! empty($connection['url'])) {
+            // Resolve the URL before Stancl replaces the database name.
+            config([
+                'database.connections.tenant_template' => (new ConfigurationUrlParser)->parseConfiguration($connection),
+                'tenancy.database.template_tenant_connection' => 'tenant_template',
+            ]);
+        }
     }
 
     public function boot(): void

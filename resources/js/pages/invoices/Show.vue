@@ -27,9 +27,9 @@ interface InvoiceItem {
 
 const props = defineProps<{
     invoice: {
-        id: number;
+        id: string;
         invoice_number: string;
-        customer: { id: number; name: string } | null;
+        customer: { id: string; name: string } | null;
         issue_date: string;
         due_date: string;
         status: 'unpaid' | 'partial' | 'paid';

@@ -12,7 +12,7 @@ import type {
 defineProps<{
     filters: Filters;
     latestReportDate: string;
-    customers: { id: number; name: string }[];
+    customers: { id: string; name: string }[];
     salesTotal: string;
     paidTotal: string;
     outstandingTotal: string;

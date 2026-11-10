@@ -10,7 +10,7 @@ class StoreInvoiceRequest extends FormRequest
 {
     /**
      * @return array{
-     *     customer_id: int|string,
+     *     customer_id: string,
      *     issue_date: string,
      *     due_date: string,
      *     items: list<array{description: string, quantity: string, unit_price: string}>
@@ -48,9 +48,8 @@ class StoreInvoiceRequest extends FormRequest
             'customer_id' => [
                 'bail',
                 'required',
-                'integer',
-                Rule::exists('customers', 'id')
-                    ->where('tenant_id', tenant()->getTenantKey())
+                'ulid',
+                Rule::exists('tenant.customers', 'id')
                     ->where('status', 'AC'),
             ],
 

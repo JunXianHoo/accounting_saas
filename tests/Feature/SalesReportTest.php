@@ -4,10 +4,9 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 beforeEach(function () {
-    $this->company = Tenant::create(['name' => 'Company A']);
+    $this->company = createTenant(['name' => 'Company A']);
     $this->user = User::factory()->create([
         'tenant_id' => $this->company->id,
     ]);
@@ -34,7 +33,7 @@ test('sales includes only company invoices issued in the selected range', functi
         }
     });
 
-    $otherCompany = Tenant::create(['name' => 'Company B']);
+    $otherCompany = createTenant(['name' => 'Company B']);
     $otherCompany->run(fn () => Invoice::factory()->create([
         'issue_date' => $to,
         'subtotal' => '300.00',
@@ -108,7 +107,7 @@ test('invoice number filtering matches only the signed-in company and can be dis
         return $invoice;
     });
 
-    $otherCompany = Tenant::create(['name' => 'Company B']);
+    $otherCompany = createTenant(['name' => 'Company B']);
     $otherCompany->run(fn () => Invoice::factory()->create(['issue_date' => $date, 'total' => '900.00']));
 
     $query = [

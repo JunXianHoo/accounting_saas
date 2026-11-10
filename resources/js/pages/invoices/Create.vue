@@ -3,7 +3,7 @@ import { Head } from '@inertiajs/vue3';
 import InvoiceForm from '@/components/InvoiceForm.vue';
 
 defineProps<{
-    customers: { id: number; name: string }[];
+    customers: { id: string; name: string }[];
 }>();
 
 defineOptions({

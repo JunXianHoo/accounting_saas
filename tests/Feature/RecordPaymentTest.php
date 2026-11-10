@@ -3,10 +3,9 @@
 use App\Actions\Invoices\RecordPayment;
 use App\Models\Invoice;
 use Illuminate\Validation\ValidationException;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 beforeEach(function () {
-    $company = Tenant::create(['name' => 'Company A']);
+    $company = createTenant(['name' => 'Company A']);
     tenancy()->initialize($company);
 
     $this->invoice = Invoice::factory()->create([
@@ -36,7 +35,7 @@ test('paying the remaining balance marks the invoice paid', function () {
     $this->recordPayment->handle($this->invoice, '70.00', '2026-11-04');
 
     expect($this->invoice->refresh()->status)->toBe('paid');
-    $this->assertDatabaseCount('payments', 2);
+    $this->assertTenantDatabaseCount('payments', 2);
 });
 
 test('an overpayment leaves the existing payment and status intact', function () {
@@ -46,5 +45,5 @@ test('an overpayment leaves the existing payment and status intact', function ()
         ->toThrow(ValidationException::class);
 
     expect($this->invoice->refresh()->status)->toBe('partial');
-    $this->assertDatabaseCount('payments', 1);
+    $this->assertTenantDatabaseCount('payments', 1);
 });

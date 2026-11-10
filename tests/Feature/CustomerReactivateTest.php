@@ -2,22 +2,21 @@
 
 use App\Models\Customer;
 use App\Models\User;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 beforeEach(function () {
-    $companyA = Tenant::create(['name' => 'Company A']);
-    $companyB = Tenant::create(['name' => 'Company B']);
+    $this->companyA = createTenant(['name' => 'Company A']);
+    $this->companyB = createTenant(['name' => 'Company B']);
 
     $this->user = User::factory()->create([
-        'tenant_id' => $companyA->id,
+        'tenant_id' => $this->companyA->id,
     ]);
 
-    tenancy()->initialize($companyA);
+    tenancy()->initialize($this->companyA);
     $this->customerA = Customer::factory()->create([
         'status' => 'DA',
     ]);
 
-    tenancy()->initialize($companyB);
+    tenancy()->initialize($this->companyB);
     $this->customerB = Customer::factory()->create([
         'status' => 'DA',
     ]);
@@ -34,20 +33,20 @@ test('users can reactivate their own company customer', function () {
         ->patch(route('customers.reactivate', $this->customerA->id))
         ->assertRedirect(route('customers.index'));
 
-    $this->assertDatabaseHas('customers', [
+    $this->assertTenantDatabaseHas('customers', [
         'id' => $this->customerA->id,
-        'tenant_id' => $this->customerA->tenant_id,
         'name' => $this->customerA->name,
         'email' => $this->customerA->email,
         'status' => 'AC',
-    ]);
+    ], $this->companyA);
 
-    $this->assertDatabaseHas('customers', [
+    $this->assertTenantDatabaseHas('customers', [
         'id' => $this->customerB->id,
         'status' => 'DA',
-    ]);
+    ], $this->companyB);
 
-    $this->assertDatabaseCount('customers', 2);
+    $this->assertTenantDatabaseCount('customers', 1, $this->companyA);
+    $this->assertTenantDatabaseCount('customers', 1, $this->companyB);
 
     expect(tenancy()->initialized)->toBeFalse();
 });
@@ -57,12 +56,13 @@ test('users cannot reactivate another company customer', function () {
         ->patch(route('customers.reactivate', $this->customerB->id))
         ->assertNotFound();
 
-    $this->assertDatabaseHas('customers', [
+    $this->assertTenantDatabaseHas('customers', [
         'id' => $this->customerB->id,
         'status' => 'DA',
-    ]);
+    ], $this->companyB);
 
-    $this->assertDatabaseCount('customers', 2);
+    $this->assertTenantDatabaseCount('customers', 1, $this->companyA);
+    $this->assertTenantDatabaseCount('customers', 1, $this->companyB);
 
     expect(tenancy()->initialized)->toBeFalse();
 });
@@ -71,10 +71,10 @@ test('guests cannot reactivate customers', function () {
     $this->patch(route('customers.reactivate', $this->customerA->id))
         ->assertRedirect(route('login'));
 
-    $this->assertDatabaseHas('customers', [
+    $this->assertTenantDatabaseHas('customers', [
         'id' => $this->customerA->id,
         'status' => 'DA',
-    ]);
+    ], $this->companyA);
 });
 
 test('users without a company cannot reactivate customers', function () {
@@ -84,8 +84,8 @@ test('users without a company cannot reactivate customers', function () {
         ->patch(route('customers.reactivate', $this->customerA->id))
         ->assertForbidden();
 
-    $this->assertDatabaseHas('customers', [
+    $this->assertTenantDatabaseHas('customers', [
         'id' => $this->customerA->id,
         'status' => 'DA',
-    ]);
+    ], $this->companyA);
 });

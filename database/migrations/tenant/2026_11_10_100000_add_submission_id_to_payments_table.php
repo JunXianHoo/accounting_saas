@@ -10,14 +10,14 @@ return new class extends Migration
     {
         Schema::table('payments', function (Blueprint $table) {
             $table->uuid('submission_id')->nullable();
-            $table->unique(['tenant_id', 'invoice_id', 'submission_id']);
+            $table->unique(['invoice_id', 'submission_id']);
         });
     }
 
     public function down(): void
     {
         Schema::table('payments', function (Blueprint $table) {
-            $table->dropUnique(['tenant_id', 'invoice_id', 'submission_id']);
+            $table->dropUnique(['invoice_id', 'submission_id']);
             $table->dropColumn('submission_id');
         });
     }

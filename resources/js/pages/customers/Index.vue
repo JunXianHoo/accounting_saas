@@ -9,7 +9,7 @@ import type { TableColumn } from '@nuxt/ui/components/Table.vue';
 import { computed, useId, watch } from 'vue';
 
 interface Customer {
-    id: number;
+    id: string;
     name: string;
     email: string;
     phone: string | null;

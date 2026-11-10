@@ -22,7 +22,7 @@ interface InvoiceFormData {
 
 const props = withDefaults(
     defineProps<{
-        customers: { id: number; name: string }[];
+        customers: { id: string; name: string }[];
         action: string;
         method?: 'post' | 'patch';
         initialData?: InvoiceFormData;

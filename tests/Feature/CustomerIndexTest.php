@@ -3,7 +3,6 @@
 use App\Models\Customer;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 afterEach(function () {
     tenancy()->end();
@@ -25,8 +24,8 @@ test('users without a company cannot access the customer list', function () {
 });
 
 test('users only receive their own company customers', function () {
-    $companyA = Tenant::create(['name' => 'Company A']);
-    $companyB = Tenant::create(['name' => 'Company B']);
+    $companyA = createTenant(['name' => 'Company A']);
+    $companyB = createTenant(['name' => 'Company B']);
 
     $alice = User::factory()->create([
         'tenant_id' => $companyA->id,
@@ -71,8 +70,8 @@ test('users only receive their own company customers', function () {
 });
 
 test('customer name and status filters combine and persist through pagination', function () {
-    $company = Tenant::create(['name' => 'Company A']);
-    $otherCompany = Tenant::create(['name' => 'Company B']);
+    $company = createTenant(['name' => 'Company A']);
+    $otherCompany = createTenant(['name' => 'Company B']);
     $user = User::factory()->create(['tenant_id' => $company->id]);
 
     $lastMatch = $company->run(function () {

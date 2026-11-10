@@ -6,10 +6,9 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 beforeEach(function () {
-    $this->company = Tenant::create(['name' => 'Company A']);
+    $this->company = createTenant(['name' => 'Company A']);
     $this->user = User::factory()->create(['tenant_id' => $this->company->id]);
 
     $this->invoice = $this->company->run(function () {
@@ -63,18 +62,17 @@ test('updating through the route saves changes and refreshes the dashboard', fun
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('invoices.show', $this->invoice));
 
-    $this->assertDatabaseHas('invoices', [
+    $this->assertTenantDatabaseHas('invoices', [
         'id' => $this->invoice->id,
-        'tenant_id' => $this->company->id,
         'invoice_number' => $this->invoice->invoice_number,
         'total' => '25.00',
     ]);
-    $this->assertDatabaseHas('invoice_items', [
+    $this->assertTenantDatabaseHas('invoice_items', [
         'invoice_id' => $this->invoice->id,
         'description' => 'Updated item',
         'line_total' => '25.00',
     ]);
-    $this->assertDatabaseMissing('invoice_items', [
+    $this->assertTenantDatabaseMissing('invoice_items', [
         'invoice_id' => $this->invoice->id,
         'description' => 'Original item',
     ]);
@@ -91,7 +89,7 @@ test('updating through the route saves changes and refreshes the dashboard', fun
 });
 
 test('edit and update routes reject another company invoice', function () {
-    $otherCompany = Tenant::create(['name' => 'Company B']);
+    $otherCompany = createTenant(['name' => 'Company B']);
     $otherInvoice = $otherCompany->run(fn () => Invoice::factory()->create(['total' => '80.00']));
 
     $this->actingAs($this->user)
@@ -101,11 +99,10 @@ test('edit and update routes reject another company invoice', function () {
     $this->patch(route('invoices.update', $otherInvoice), $this->payload)
         ->assertNotFound();
 
-    $this->assertDatabaseHas('invoices', [
+    $this->assertTenantDatabaseHas('invoices', [
         'id' => $otherInvoice->id,
-        'tenant_id' => $otherCompany->id,
         'total' => '80.00',
-    ]);
+    ], $otherCompany);
 
     expect(tenancy()->initialized)->toBeFalse();
 });
@@ -121,17 +118,17 @@ test('edit and update routes reject invoices with payments', function (string $a
     $this->patch(route('invoices.update', $this->invoice), $this->payload)
         ->assertForbidden();
 
-    $this->assertDatabaseHas('invoices', [
+    $this->assertTenantDatabaseHas('invoices', [
         'id' => $this->invoice->id,
         'total' => '100.00',
     ]);
-    $this->assertDatabaseCount('payments', 1);
+    $this->assertTenantDatabaseCount('payments', 1);
 
     expect(tenancy()->initialized)->toBeFalse();
 })->with(['partial' => '30.00', 'paid' => '100.00']);
 
 test('an invoice cannot be reassigned to another company customer', function () {
-    $otherCompany = Tenant::create(['name' => 'Company B']);
+    $otherCompany = createTenant(['name' => 'Company B']);
     $otherCustomer = $otherCompany->run(fn () => Customer::factory()->create(['status' => 'AC']));
     $this->payload['customer_id'] = $otherCustomer->id;
 
@@ -139,7 +136,7 @@ test('an invoice cannot be reassigned to another company customer', function () 
         ->patch(route('invoices.update', $this->invoice), $this->payload)
         ->assertSessionHasErrors('customer_id');
 
-    $this->assertDatabaseHas('invoices', [
+    $this->assertTenantDatabaseHas('invoices', [
         'id' => $this->invoice->id,
         'customer_id' => $this->invoice->customer_id,
         'total' => '100.00',
@@ -153,12 +150,12 @@ test('invoice updates reject protected fields and invalid input', function (stri
         ->patch(route('invoices.update', $this->invoice), $this->payload)
         ->assertSessionHasErrors($field);
 
-    $this->assertDatabaseHas('invoices', [
+    $this->assertTenantDatabaseHas('invoices', [
         'id' => $this->invoice->id,
         'invoice_number' => $this->invoice->invoice_number,
         'total' => '100.00',
     ]);
-    $this->assertDatabaseHas('invoice_items', [
+    $this->assertTenantDatabaseHas('invoice_items', [
         'invoice_id' => $this->invoice->id,
         'description' => 'Original item',
     ]);

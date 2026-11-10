@@ -3,10 +3,10 @@
 namespace App\Console\Commands;
 
 use App\Models\Invoice;
+use App\Models\Tenant;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 class CheckOverdueInvoices extends Command
 {

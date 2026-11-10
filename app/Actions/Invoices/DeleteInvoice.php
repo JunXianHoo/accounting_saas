@@ -30,7 +30,7 @@ class DeleteInvoice
                 ]);
             }
 
-            $tenantId = (string) $lockedInvoice->tenant_id;
+            $tenantId = (string) tenant()->getTenantKey();
 
             $lockedInvoice->items()->delete();
             $lockedInvoice->delete();

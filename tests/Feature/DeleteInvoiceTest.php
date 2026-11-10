@@ -10,10 +10,9 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia as Assert;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 beforeEach(function () {
-    $this->company = Tenant::create(['name' => 'Company A']);
+    $this->company = createTenant(['name' => 'Company A']);
 
     tenancy()->initialize($this->company);
 
@@ -58,15 +57,15 @@ test('deleting an invoice removes its items and refreshes the dashboard', functi
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('reports.sales'));
 
-    $this->assertDatabaseMissing('invoices', [
+    $this->assertTenantDatabaseMissing('invoices', [
         'id' => $this->invoice->id,
     ]);
 
-    $this->assertDatabaseMissing('invoice_items', [
+    $this->assertTenantDatabaseMissing('invoice_items', [
         'invoice_id' => $this->invoice->id,
     ]);
 
-    $this->assertDatabaseHas('customers', [
+    $this->assertTenantDatabaseHas('customers', [
         'id' => $this->invoice->customer_id,
     ]);
 
@@ -86,15 +85,15 @@ test('an invoice without payments can be deleted with its items', function () {
 
     app(DeleteInvoice::class)->handle($this->invoice);
 
-    $this->assertDatabaseMissing('invoices', [
+    $this->assertTenantDatabaseMissing('invoices', [
         'id' => $invoiceId,
     ]);
 
-    $this->assertDatabaseMissing('invoice_items', [
+    $this->assertTenantDatabaseMissing('invoice_items', [
         'id' => $itemId,
     ]);
 
-    $this->assertDatabaseHas('customers', [
+    $this->assertTenantDatabaseHas('customers', [
         'id' => $this->data['customer_id'],
     ]);
 
@@ -117,32 +116,32 @@ test('invoices with payments cannot be deleted', function (
         ->handle($this->invoice))
         ->toThrow(ValidationException::class);
 
-    $this->assertDatabaseHas('invoices', [
+    $this->assertTenantDatabaseHas('invoices', [
         'id' => $this->invoice->id,
         'total' => '100.00',
         'status' => $expectedStatus,
     ]);
 
-    $this->assertDatabaseHas('invoice_items', [
+    $this->assertTenantDatabaseHas('invoice_items', [
         'invoice_id' => $this->invoice->id,
         'description' => 'Consulting',
     ]);
 
-    $this->assertDatabaseHas('payments', [
+    $this->assertTenantDatabaseHas('payments', [
         'invoice_id' => $this->invoice->id,
         'amount' => $amount,
     ]);
 
-    $this->assertDatabaseCount('invoices', 1);
-    $this->assertDatabaseCount('invoice_items', 1);
-    $this->assertDatabaseCount('payments', 1);
+    $this->assertTenantDatabaseCount('invoices', 1);
+    $this->assertTenantDatabaseCount('invoice_items', 1);
+    $this->assertTenantDatabaseCount('payments', 1);
 })->with([
     'partially paid' => ['30.00', 'partial'],
     'fully paid' => ['100.00', 'paid'],
 ]);
 
 test('another company invoice cannot be deleted', function () {
-    $otherCompany = Tenant::create(['name' => 'Company B']);
+    $otherCompany = createTenant(['name' => 'Company B']);
 
     $otherInvoice = $otherCompany->run(function () {
         $invoice = Invoice::factory()->create([
@@ -161,19 +160,17 @@ test('another company invoice cannot be deleted', function () {
         ->handle($otherInvoice))
         ->toThrow(ModelNotFoundException::class);
 
-    $this->assertDatabaseHas('invoices', [
+    $this->assertTenantDatabaseHas('invoices', [
         'id' => $otherInvoice->id,
-        'tenant_id' => $otherCompany->id,
-    ]);
+    ], $otherCompany);
 
-    $this->assertDatabaseHas('invoice_items', [
+    $this->assertTenantDatabaseHas('invoice_items', [
         'invoice_id' => $otherInvoice->id,
         'description' => 'Company B item',
-    ]);
+    ], $otherCompany);
 
-    $this->assertDatabaseHas('invoices', [
+    $this->assertTenantDatabaseHas('invoices', [
         'id' => $this->invoice->id,
-        'tenant_id' => $this->company->id,
     ]);
 });
 
@@ -199,18 +196,18 @@ test('the delete route rejects invoices with payments', function (
         ->assertSessionHasErrors('invoice')
         ->assertRedirect(route('invoices.show', $this->invoice));
 
-    $this->assertDatabaseHas('invoices', [
+    $this->assertTenantDatabaseHas('invoices', [
         'id' => $this->invoice->id,
         'status' => $expectedStatus,
         'total' => '100.00',
     ]);
 
-    $this->assertDatabaseHas('invoice_items', [
+    $this->assertTenantDatabaseHas('invoice_items', [
         'invoice_id' => $this->invoice->id,
         'description' => 'Consulting',
     ]);
 
-    $this->assertDatabaseHas('payments', [
+    $this->assertTenantDatabaseHas('payments', [
         'invoice_id' => $this->invoice->id,
         'amount' => $amount,
     ]);
@@ -222,7 +219,7 @@ test('the delete route rejects invoices with payments', function (
 ]);
 
 test('the delete route rejects another company invoice', function () {
-    $otherCompany = Tenant::create(['name' => 'Company B']);
+    $otherCompany = createTenant(['name' => 'Company B']);
 
     $otherInvoice = $otherCompany->run(function () {
         $invoice = Invoice::factory()->create([
@@ -247,19 +244,17 @@ test('the delete route rejects another company invoice', function () {
         ->delete(route('invoices.destroy', $otherInvoice))
         ->assertNotFound();
 
-    $this->assertDatabaseHas('invoices', [
+    $this->assertTenantDatabaseHas('invoices', [
         'id' => $otherInvoice->id,
-        'tenant_id' => $otherCompany->id,
-    ]);
+    ], $otherCompany);
 
-    $this->assertDatabaseHas('invoice_items', [
+    $this->assertTenantDatabaseHas('invoice_items', [
         'invoice_id' => $otherInvoice->id,
         'description' => 'Company B item',
-    ]);
+    ], $otherCompany);
 
-    $this->assertDatabaseHas('invoices', [
+    $this->assertTenantDatabaseHas('invoices', [
         'id' => $this->invoice->id,
-        'tenant_id' => $this->company->id,
     ]);
 
     expect(tenancy()->initialized)->toBeFalse();

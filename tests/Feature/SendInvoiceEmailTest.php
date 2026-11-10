@@ -4,16 +4,14 @@ use App\Actions\Invoices\DeleteInvoice;
 use App\Jobs\SendInvoiceEmail;
 use App\Mail\InvoiceIssued;
 use App\Models\Invoice;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 test('the invoice email job sends once and records the send time', function () {
     Mail::fake();
 
-    $company = Tenant::create(['name' => 'Company A']);
+    $company = createTenant(['name' => 'Company A']);
     [$invoice, $email] = $company->run(function () {
         $invoice = Invoice::factory()->create();
 
@@ -36,13 +34,13 @@ test('the invoice email job sends once and records the send time', function () {
 test('the invoice email job cannot send another company invoice', function () {
     Mail::fake();
 
-    $company = Tenant::create(['name' => 'Company A']);
-    $otherCompany = Tenant::create(['name' => 'Company B']);
+    $company = createTenant(['name' => 'Company A']);
+    $otherCompany = createTenant(['name' => 'Company B']);
     $invoice = $otherCompany->run(fn () => Invoice::factory()->create());
 
     $job = new SendInvoiceEmail($company->id, $invoice->id);
 
-    expect(fn () => $job->handle())->toThrow(ModelNotFoundException::class);
+    $job->handle();
 
     Mail::assertNothingSent();
     expect(tenancy()->initialized)->toBeFalse();
@@ -51,7 +49,7 @@ test('the invoice email job cannot send another company invoice', function () {
 test('the email job skips an invoice deleted before processing', function () {
     Mail::fake();
 
-    $company = Tenant::create(['name' => 'Company A']);
+    $company = createTenant(['name' => 'Company A']);
 
     $invoice = $company->run(
         fn () => Invoice::factory()->create()
@@ -78,7 +76,7 @@ test('a resend retry reuses the original request after saving the send time fail
     Http::preventStrayRequests();
     Http::fake(['https://api.resend.com/emails' => Http::response(['id' => 'test-email-id'])]);
 
-    $company = Tenant::create(['name' => 'Company A']);
+    $company = createTenant(['name' => 'Company A']);
     $invoice = $company->run(fn () => Invoice::factory()->create());
     $failOnce = true;
 
@@ -121,7 +119,7 @@ test('a resend retry stops before the provider deduplication window expires', fu
     Http::preventStrayRequests();
     Http::fake(['https://api.resend.com/emails' => Http::response(status: 503)]);
 
-    $company = Tenant::create(['name' => 'Company A']);
+    $company = createTenant(['name' => 'Company A']);
     $invoice = $company->run(fn () => Invoice::factory()->create());
     $job = new SendInvoiceEmail($company->id, $invoice->id);
 

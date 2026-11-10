@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
+use App\Models\Tenant;
+use App\Support\SQLiteTenantDatabaseManager;
 use Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper;
+use Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper;
 use Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper;
 use Stancl\Tenancy\Database\Models\Domain;
-use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\TenantDatabaseManagers\MySQLDatabaseManager;
 use Stancl\Tenancy\TenantDatabaseManagers\PostgreSQLDatabaseManager;
-use Stancl\Tenancy\TenantDatabaseManagers\SQLiteDatabaseManager;
 use Stancl\Tenancy\UUIDGenerator;
 
 return [
@@ -35,7 +36,7 @@ return [
      * To configure their behavior, see the config keys below.
      */
     'bootstrappers' => [
-        // Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper::class,
+        DatabaseTenancyBootstrapper::class,
         CacheTenancyBootstrapper::class,
         FilesystemTenancyBootstrapper::class,
         QueueTenancyBootstrapper::class,
@@ -46,7 +47,7 @@ return [
      * Database tenancy config. Used by DatabaseTenancyBootstrapper.
      */
     'database' => [
-        'central_connection' => env('DB_CONNECTION', 'central'),
+        'central_connection' => env('DB_CONNECTION', 'sqlite'),
 
         /**
          * Connection used as a "template" for the dynamically created tenant database connection.
@@ -59,13 +60,13 @@ return [
          * prefix + tenant_id + suffix.
          */
         'prefix' => 'tenant',
-        'suffix' => '',
+        'suffix' => env('DB_CONNECTION', 'sqlite') === 'sqlite' ? '.sqlite' : '',
 
         /**
          * TenantDatabaseManagers are classes that handle the creation & deletion of tenant databases.
          */
         'managers' => [
-            'sqlite' => SQLiteDatabaseManager::class,
+            'sqlite' => SQLiteTenantDatabaseManager::class,
             'mysql' => MySQLDatabaseManager::class,
             'mariadb' => MySQLDatabaseManager::class,
             'pgsql' => PostgreSQLDatabaseManager::class,
@@ -143,7 +144,7 @@ return [
          * disable asset() helper tenancy and explicitly use tenant_asset() calls in places
          * where you want to use tenant-specific assets (product images, avatars, etc).
          */
-        'asset_helper_tenancy' => true,
+        'asset_helper_tenancy' => false,
     ],
 
     /**

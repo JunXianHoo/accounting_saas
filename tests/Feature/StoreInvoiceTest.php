@@ -5,12 +5,11 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\User;
 use Illuminate\Support\Facades\Queue;
-use Stancl\Tenancy\Database\Models\Tenant;
 
 beforeEach(function () {
     Queue::fake();
 
-    $this->company = Tenant::create(['name' => 'Company A']);
+    $this->company = createTenant(['name' => 'Company A']);
     $this->user = User::factory()->create([
         'tenant_id' => $this->company->id,
     ]);
@@ -39,12 +38,11 @@ test('a user can create an invoice for their company customer', function () {
         ->assertSessionHasNoErrors()
         ->assertRedirect(route('reports.sales'));
 
-    $this->assertDatabaseHas('invoices', [
-        'tenant_id' => $this->company->id,
+    $this->assertTenantDatabaseHas('invoices', [
         'customer_id' => $this->customer->id,
         'total' => '25.00',
     ]);
-    $this->assertDatabaseCount('invoice_items', 1);
+    $this->assertTenantDatabaseCount('invoice_items', 1);
 
     $invoiceId = $this->company->run(fn () => Invoice::sole()->id);
 
@@ -55,7 +53,7 @@ test('a user can create an invoice for their company customer', function () {
 });
 
 test('a user cannot invoice another company customer', function () {
-    $otherCompany = Tenant::create(['name' => 'Company B']);
+    $otherCompany = createTenant(['name' => 'Company B']);
     $otherCustomer = $otherCompany->run(
         fn () => Customer::factory()->create(['status' => 'AC'])
     );
@@ -67,8 +65,8 @@ test('a user cannot invoice another company customer', function () {
         ->post(route('invoices.store'), $payload)
         ->assertSessionHasErrors('customer_id');
 
-    $this->assertDatabaseCount('invoices', 0);
-    $this->assertDatabaseCount('invoice_items', 0);
+    $this->assertTenantDatabaseCount('invoices', 0);
+    $this->assertTenantDatabaseCount('invoice_items', 0);
 
     Queue::assertNothingPushed();
 });
