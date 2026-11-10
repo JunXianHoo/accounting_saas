@@ -3,9 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Models\Tenant;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class CheckOverdueInvoices extends Command
@@ -16,25 +16,31 @@ class CheckOverdueInvoices extends Command
 
     public function handle(): int
     {
-        $today = today()->toDateString();
+        $checkedAt = now();
+        $today = $checkedAt->toDateString();
 
         foreach (Tenant::query()->lazyById() as $company) {
             try {
                 tenancy()->initialize($company);
 
+                $paymentTotal = Payment::query()
+                    ->selectRaw('ROUND(COALESCE(SUM(amount), 0), 2)')
+                    ->whereColumn('payments.invoice_id', 'invoices.id');
+
                 $overdueInvoices = Invoice::query()
                     ->where('due_date', '<', $today)
-                    ->select(['invoices.id', 'invoices.total'])
-                    ->withPaymentTotals();
+                    ->where('total', '>', $paymentTotal)
+                    ->toBase();
 
-                $overdueCount = DB::query()
-                    ->fromSub($overdueInvoices->toBase(), 'overdue_invoices')
-                    ->whereRaw('COALESCE(total_paid, 0) < total')
-                    ->count();
+                $newlyDetected = (clone $overdueInvoices)
+                    ->whereNull('overdue_detected_at')
+                    ->update(['overdue_detected_at' => $checkedAt]);
+                $overdueCount = $overdueInvoices->count();
 
                 Log::info('Overdue invoice check completed', [
                     'tenant_id' => $company->id,
                     'overdue_count' => $overdueCount,
+                    'newly_detected_count' => $newlyDetected,
                     'checked_on' => $today,
                 ]);
 

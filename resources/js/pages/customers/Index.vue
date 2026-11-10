@@ -15,6 +15,7 @@ interface Customer {
     phone: string | null;
     address: string | null;
     status: 'AC' | 'DA';
+    invoices_exists: boolean;
 }
 
 interface CustomerPagination {
@@ -112,6 +113,14 @@ function reactivateCustomer(customer: Customer) {
         preserveScroll: true,
     });
 }
+
+function deleteCustomer(customer: Customer) {
+    if (!window.confirm(`Permanently delete customer "${customer.name}"?`)) {
+        return;
+    }
+
+    statusForm.delete(`/customers/${customer.id}`, { preserveScroll: true });
+}
 </script>
 
 <template>
@@ -176,6 +185,14 @@ function reactivateCustomer(customer: Customer) {
             </div>
         </form>
 
+        <p
+            v-if="$page.props.errors.customer"
+            role="alert"
+            class="text-sm text-red-600"
+        >
+            {{ $page.props.errors.customer }}
+        </p>
+
         <UTable
             :data="customers.data"
             :columns="columns"
@@ -228,6 +245,17 @@ function reactivateCustomer(customer: Customer) {
                         @click="reactivateCustomer(row.original)"
                     >
                         Reactivate
+                    </Button>
+                    <Button
+                        v-if="!row.original.invoices_exists"
+                        type="button"
+                        variant="ghost"
+                        color="error"
+                        size="sm"
+                        :disabled="statusForm.processing"
+                        @click="deleteCustomer(row.original)"
+                    >
+                        Delete
                     </Button>
                 </div>
             </template>

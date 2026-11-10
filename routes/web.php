@@ -27,6 +27,9 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     Route::patch('/customers/{customer}', [CustomerController::class, 'update'])
         ->name('customers.update');
 
+    Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])
+        ->name('customers.destroy');
+
     Route::patch('/customers/{customer}/reactivate', [
         CustomerController::class,
         'reactivate',

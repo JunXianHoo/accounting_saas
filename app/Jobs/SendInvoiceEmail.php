@@ -56,7 +56,7 @@ class SendInvoiceEmail implements ShouldQueue
                     }
 
                     $invoice->load(['customer', 'items']);
-                    Mail::to($invoice->customer->email)->send(new InvoiceIssued($invoice));
+                    Mail::mailer('log')->to($invoice->customer->email)->send(new InvoiceIssued($invoice));
                 }
 
                 $invoice->emailed_at = now();

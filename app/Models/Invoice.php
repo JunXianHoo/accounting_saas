@@ -98,6 +98,7 @@ class Invoice extends Model
             'subtotal' => 'decimal:2',
             'total' => 'decimal:2',
             'emailed_at' => 'datetime',
+            'overdue_detected_at' => 'datetime',
             'email_payload' => 'array',
             'email_first_attempt_at' => 'immutable_datetime',
         ];

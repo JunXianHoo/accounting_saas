@@ -13,10 +13,11 @@ docker compose ps
 
 Open <http://localhost:8080/register> to create a company. Compose builds the frontend, generates a Laravel app key on first startup, and runs migrations for the central database and any existing company databases. Registration creates and migrates a new company database before signing the user in. Invoice emails are written to the worker log.
 
-If you already ran the shared-database version, start the multi-database version with fresh volumes by using a new Compose project name. For example, run `ACCOUNTING_PORT=8081 docker compose -p accounting-multidb up --build -d` and open <http://localhost:8081/register>. Use `docker compose -p accounting-multidb` for subsequent commands for that project.
+If you already ran the shared-database version, start the multi-database version with fresh volumes by using an unused Compose project name. For example, run `ACCOUNTING_PORT=8081 docker compose -p accounting-assessment up --build -d` and open <http://localhost:8081/register>. Use `docker compose -p accounting-assessment` for subsequent commands for that project.
 
 ```sh
 docker compose logs worker
+docker compose exec app php artisan tenants:databases
 docker compose exec app php artisan invoices:check-overdue
 docker compose exec app php artisan test
 ```
@@ -63,28 +64,28 @@ After editing the source, run `docker compose up --build -d` to rebuild the imag
     MAIL_MAILER=log
     ```
 
-4. Run `php artisan migrate`. Start `php artisan serve` and `npm run dev` in separate terminals. Open <http://localhost:8000/register> to create a user and their company.
+4. Run `php artisan migrate` for the central database and `php artisan tenants:migrate` for any existing company databases. Start `php artisan serve` and `npm run dev` in separate terminals. Open <http://localhost:8000/register> to create a user and their company.
 5. Start `php artisan queue:work redis` in another terminal to process invoice email jobs. With the log mailer, the rendered message is written to the Laravel log, normally `storage/logs/laravel.log`.
 6. To exercise the scheduler locally, run `php artisan schedule:work`. Use `php artisan schedule:list` to inspect the schedule and `php artisan invoices:check-overdue` to run the check immediately. The configured daily check runs at 00:05 UTC (08:05 in Kuala Lumpur).
 
 ## Try the application
 
-- Visit `/customers` to create an active customer.
+- Visit `/customers` to create or edit a customer. Delete customers with no invoices, or deactivate customers whose invoice history must be preserved.
 - Open **Invoice Reports** at `/reports/sales` and click **Create invoice** to issue an invoice for that customer. Its number uses the issue date and a daily sequence for the company, such as `INV20261107001`.
 - Open the invoice to edit or delete it before recording payments. Invoice edits preserve the assigned number. Record a partial payment with an optional reference, then pay the remaining balance.
-- Visit `/dashboard` to see company totals. Monthly receipts use payment dates. Visit `/reports/sales` to filter by invoice number, payment status, customer, or issue-date range.
+- Visit `/dashboard` to see company totals. Monthly receipts use payment dates. In **Invoice Reports**, select an issue-date range for sales, an outstanding balance for unpaid invoices, or a customer for that customer's invoiced, paid, and outstanding totals.
 - Register a second account to create a separate company and verify that its invoice list and report start empty.
 - Open an invoice URL from the first company while signed in to the second. The app returns `404`.
 
-Invoice amounts use decimal arithmetic. Payment recording locks the invoice, rejects overpayments, and accepts dates from the invoice's issue date through today. Overdue is calculated from the due date and payment status. The daily command checks each company's overdue invoices against recorded payment totals and logs the count.
+Invoice amounts use decimal arithmetic. Payment recording locks the invoice, rejects overpayments, and accepts dates from the invoice's issue date through today. The app computes whether an invoice is currently overdue from its due date and payment status. The daily command checks each company's unpaid balances, records when it first detected each overdue invoice in `overdue_detected_at`, and logs the count. The timestamp is an audit record and never drives the current status.
 
 Dashboard totals are cached per company and day. Invoice creation, edits, and deletion, as well as payment creation and updates, invalidate the cache after commit. Invoice email jobs record successful sends in `emailed_at` and skip invoices that have already been emailed or have been deleted.
 
-See the [database ERD](docs/erd.md) for tables and ownership constraints.
+Run `php artisan tenants:databases` to list companies and their database names, or `php artisan tenants:databases "Harbor Studio"` to filter by name. Use the returned database name in your PostgreSQL client. See the [database ERD](docs/erd.md) for tables and ownership constraints.
 
 ## Send invoice emails through Resend
 
-The demo uses the log mailer. For real invoice emails, apply the latest migrations and set these values in the environment used by the queue worker.
+The demo writes messages to the log. Real delivery uses Resend so a worker retry can reuse the provider's idempotency key. Apply the latest migrations and set these values in the environment used by the queue worker.
 
 ```dotenv
 INVOICE_EMAIL_USE_RESEND=true

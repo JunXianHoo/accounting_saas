@@ -52,6 +52,7 @@ erDiagram
         string status "unpaid, partial, or paid"
         decimal subtotal
         decimal total
+        timestamp overdue_detected_at "nullable, audit only"
         timestamp emailed_at
         json email_payload "nullable"
         timestamp email_first_attempt_at "nullable"
@@ -80,6 +81,8 @@ erDiagram
 
 Each invoice references a customer in its company's database. Items and payments reference invoices in the same database. Invoice and customer IDs are ULIDs, so links from another company do not resolve even when two companies have the same invoice number.
 
+The customer foreign key prevents deletion while invoices reference the customer. Deactivation preserves that history.
+
 The tenant database enforces invoice-number uniqueness and keeps one sequence per issue date. Invoice edits preserve the number, and deletion leaves the counter intact.
 
-The authenticated user's company selects the tenant connection before Laravel binds route models. The overdue command iterates companies, and the mail job selects its tenant database using the company ID in the job payload.
+The authenticated user's company selects the tenant connection before Laravel binds route models. The overdue command iterates companies and records the first scheduled detection of overdue invoices. Current overdue status is computed separately. The mail job selects its tenant database using the company ID in the job payload.

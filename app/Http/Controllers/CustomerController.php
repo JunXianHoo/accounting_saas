@@ -7,7 +7,9 @@ use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\Customer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,7 +30,8 @@ class CustomerController extends Controller
         ];
 
         $customers = Customer::query()
-            ->select(['id', 'name', 'email', 'phone', 'address', 'status']);
+            ->select(['id', 'name', 'email', 'phone', 'address', 'status'])
+            ->withExists('invoices');
 
         if ($filters['name'] !== null) {
             $name = strtr($filters['name'], ['!' => '!!', '%' => '!%', '_' => '!_']);
@@ -95,9 +98,23 @@ class CustomerController extends Controller
         return to_route('customers.index');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    public function destroy(Customer $customer): RedirectResponse
+    {
+        DB::transaction(function () use ($customer): void {
+            $lockedCustomer = Customer::query()->whereKey($customer->getKey())->lockForUpdate()->firstOrFail();
+
+            if ($lockedCustomer->invoices()->exists()) {
+                throw ValidationException::withMessages([
+                    'customer' => 'Customers with invoices can be deactivated instead.',
+                ]);
+            }
+
+            $lockedCustomer->delete();
+        });
+
+        return to_route('customers.index');
+    }
+
     public function deactivate(Customer $customer): RedirectResponse
     {
         $customer->status = 'DA';
