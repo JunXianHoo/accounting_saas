@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { formatNumber } from '@/lib/formatNumber';
 
-defineProps<{
+const props = defineProps<{
     label: string;
     value: string | number;
     href: string;
     query?: Record<string, string | number>;
 }>();
+
+const displayValue = computed(() => formatNumber(props.value));
 </script>
 
 <template>
@@ -16,10 +20,10 @@ defineProps<{
             <Link
                 :href="href"
                 :data="query"
-                :aria-label="`View ${label}: ${value}`"
+                :aria-label="`View ${label}: ${displayValue}`"
                 class="text-primary underline decoration-muted-foreground underline-offset-4 hover:decoration-current"
             >
-                {{ value }}
+                {{ displayValue }}
             </Link>
         </dd>
     </div>

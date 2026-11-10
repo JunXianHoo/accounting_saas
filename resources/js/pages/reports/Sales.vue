@@ -4,6 +4,7 @@ import InvoiceReportFilters from '@/components/InvoiceReportFilters.vue';
 import InvoiceTable from '@/components/InvoiceTable.vue';
 import PaginationLinks from '@/components/PaginationLinks.vue';
 import { Button } from '@/components/ui/button';
+import { formatNumber } from '@/lib/formatNumber';
 import type {
     InvoiceReportFilters as Filters,
     PaginatedInvoices,
@@ -48,19 +49,19 @@ defineProps<{
             <div class="rounded-lg border p-4">
                 <dt class="text-sm text-muted-foreground">Total invoiced</dt>
                 <dd class="mt-2 text-2xl font-semibold tabular-nums">
-                    {{ salesTotal }}
+                    {{ formatNumber(salesTotal) }}
                 </dd>
             </div>
             <div class="rounded-lg border p-4">
                 <dt class="text-sm text-muted-foreground">Paid to date</dt>
                 <dd class="mt-2 text-2xl font-semibold tabular-nums">
-                    {{ paidTotal }}
+                    {{ formatNumber(paidTotal) }}
                 </dd>
             </div>
             <div class="rounded-lg border p-4">
                 <dt class="text-sm text-muted-foreground">Outstanding</dt>
                 <dd class="mt-2 text-2xl font-semibold tabular-nums">
-                    {{ outstandingTotal }}
+                    {{ formatNumber(outstandingTotal) }}
                 </dd>
             </div>
         </dl>

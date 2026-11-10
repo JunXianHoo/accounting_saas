@@ -16,6 +16,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { formatNumber } from '@/lib/formatNumber';
 
 interface InvoiceItem {
     id: number;
@@ -56,12 +57,23 @@ const itemColumns: TableColumn<InvoiceItem>[] = [
         footer: 'Invoice total',
         meta: { class: { td: 'min-w-48 whitespace-normal' } },
     },
-    { accessorKey: 'quantity', header: 'Quantity', meta: amount },
-    { accessorKey: 'unit_price', header: 'Unit price', meta: amount },
+    {
+        accessorKey: 'quantity',
+        header: 'Quantity',
+        cell: ({ row }) => formatNumber(row.original.quantity),
+        meta: amount,
+    },
+    {
+        accessorKey: 'unit_price',
+        header: 'Unit price',
+        cell: ({ row }) => formatNumber(row.original.unit_price),
+        meta: amount,
+    },
     {
         accessorKey: 'line_total',
         header: 'Total',
-        footer: () => props.invoice.total,
+        cell: ({ row }) => formatNumber(row.original.line_total),
+        footer: () => formatNumber(props.invoice.total),
         meta: amount,
     },
 ];
@@ -74,7 +86,12 @@ const paymentColumns: TableColumn<(typeof props.invoice.payments)[number]>[] = [
         header: 'Payment reference',
         meta: { class: { td: 'min-w-40 whitespace-normal break-words' } },
     },
-    { accessorKey: 'amount', header: 'Amount', meta: amount },
+    {
+        accessorKey: 'amount',
+        header: 'Amount',
+        cell: ({ row }) => formatNumber(row.original.amount),
+        meta: amount,
+    },
 ];
 
 const paymentForm = useForm({
@@ -198,8 +215,8 @@ function deleteInvoice() {
 
     <section class="space-y-2 rounded border p-4">
         <h2 class="font-semibold">Payment history</h2>
-        <p>Total paid: {{ totalPaid }}</p>
-        <p>Outstanding balance: {{ outstandingBalance }}</p>
+        <p>Total paid: {{ formatNumber(totalPaid) }}</p>
+        <p>Outstanding balance: {{ formatNumber(outstandingBalance) }}</p>
 
         <UTable
             :data="invoice.payments"

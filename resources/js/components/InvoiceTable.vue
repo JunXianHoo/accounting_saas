@@ -4,6 +4,7 @@ import UBadge from '@nuxt/ui/components/Badge.vue';
 import UTable from '@nuxt/ui/components/Table.vue';
 import type { TableColumn } from '@nuxt/ui/components/Table.vue';
 import DateDisplay from './DateDisplay.vue';
+import { formatNumber } from '@/lib/formatNumber';
 import type { InvoiceSummary } from '@/types/invoice';
 
 defineProps<{
@@ -22,9 +23,24 @@ const columns: TableColumn<InvoiceSummary>[] = [
     { accessorKey: 'issue_date', header: 'Issue date' },
     { accessorKey: 'due_date', header: 'Due date' },
     { accessorKey: 'status', header: 'Status' },
-    { accessorKey: 'total', header: 'Total', meta: amount },
-    { accessorKey: 'total_paid', header: 'Paid to date', meta: amount },
-    { accessorKey: 'outstanding_balance', header: 'Outstanding', meta: amount },
+    {
+        accessorKey: 'total',
+        header: 'Total',
+        cell: ({ row }) => formatNumber(row.original.total),
+        meta: amount,
+    },
+    {
+        accessorKey: 'total_paid',
+        header: 'Paid to date',
+        cell: ({ row }) => formatNumber(row.original.total_paid),
+        meta: amount,
+    },
+    {
+        accessorKey: 'outstanding_balance',
+        header: 'Outstanding',
+        cell: ({ row }) => formatNumber(row.original.outstanding_balance),
+        meta: amount,
+    },
 ];
 
 const statusColors = {
